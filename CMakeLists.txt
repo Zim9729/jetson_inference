@@ -28,6 +28,7 @@ set(CUDA_INCLUDE_DIR "${PUBLIC_DIR}/Cuda12.0/include")
 set(CUDA_LIB_DIR "${PUBLIC_DIR}/Cuda12.0/lib/x64")
 set(TENSORRT_INCLUDE_DIR "${PUBLIC_DIR}/TensorRT-8.6/include")
 set(TENSORRT_LIB_DIR "${PUBLIC_DIR}/TensorRT-8.6/lib")
+set(STAGE_RUNTIME_SCRIPT "${PROJECT_ROOT}/cmake/StageRuntime.cmake")
 set(OPENCV_WORLD_LIB opencv_world460)
 set(CUDA_X64_LIBS
     cudart
@@ -42,6 +43,17 @@ set(TENSORRT_X64_LIBS
     nvinfer_dispatch
     nvonnxparser
     nvparsers
+)
+set(STAGE_RUNTIME_DLL_INPUTS
+    "${OPENCV_BIN_DIR}/opencv_world460.dll"
+    "${OPENCV_BIN_DIR}/opencv_videoio_ffmpeg460_64.dll"
+    "${OPENCV_BIN_DIR}/opencv_videoio_msmf460_64.dll"
+    "${TENSORRT_LIB_DIR}/nvinfer.dll"
+    "${TENSORRT_LIB_DIR}/nvinfer_plugin.dll"
+    "${TENSORRT_LIB_DIR}/nvinfer_dispatch.dll"
+    "${TENSORRT_LIB_DIR}/nvinfer_builder_resource.dll"
+    "${TENSORRT_LIB_DIR}/nvonnxparser.dll"
+    "${TENSORRT_LIB_DIR}/nvparsers.dll"
 )
 
 set(VS_ATL_INCLUDE_DIR "")
@@ -222,4 +234,33 @@ target_link_libraries(shell
 
 set_target_properties(shell PROPERTIES
     OUTPUT_NAME "shell"
+)
+
+file(GLOB_RECURSE STAGE_RUNTIME_CONFIG_INPUTS CONFIGURE_DEPENDS
+    "${PROJECT_ROOT}/config/*"
+)
+
+set(STAGE_RUNTIME_STAMP "${CMAKE_CURRENT_BINARY_DIR}/stage_runtime.stamp")
+
+add_custom_command(
+    OUTPUT "${STAGE_RUNTIME_STAMP}"
+    COMMAND "${CMAKE_COMMAND}"
+        -DPROJECT_ROOT=${PROJECT_ROOT}
+        -DRELEASE_DIR=${RELEASE_DIR}
+        -DOPENCV_BIN_DIR=${OPENCV_BIN_DIR}
+        -DTENSORRT_LIB_DIR=${TENSORRT_LIB_DIR}
+        -P "${STAGE_RUNTIME_SCRIPT}"
+    COMMAND "${CMAKE_COMMAND}" -E touch "${STAGE_RUNTIME_STAMP}"
+    DEPENDS
+        proj2
+        shell
+        "${STAGE_RUNTIME_SCRIPT}"
+        ${STAGE_RUNTIME_CONFIG_INPUTS}
+        ${STAGE_RUNTIME_DLL_INPUTS}
+    VERBATIM
+)
+
+add_custom_target(stage_runtime ALL
+    DEPENDS
+        "${STAGE_RUNTIME_STAMP}"
 )

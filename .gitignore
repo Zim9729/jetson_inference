@@ -27,6 +27,10 @@ ipch/
 # CMake / generated build folders
 out/
 build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
 
 # Local runtime and tool state
 .omx/
