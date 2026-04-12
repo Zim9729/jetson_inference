@@ -80,7 +80,7 @@ inline void ShowLog(int iLOG_LEVEL, CString sInfo,
     {
         std::string show(CW2A(sInfo.GetString()));
         show += "\n";
-        printf(show.c_str());
+        std::printf("%s", show.c_str());
     }
 }
 
