@@ -1,0 +1,28 @@
+<root>
+	<!-- 工程名称-->
+	<!-- 北2：bei2 -->
+	<!-- 广3：guang3 -->
+    <project name="guang3"/> 
+	
+	
+
+
+
+<pthreading>								<!-- 多线程参数 pthreading.exe -->
+	<exename exename="proj2.exe"/>
+	<imgtype json0_jpg1="1"/>  				<!-- 数据类型：0:读取json文件；1:读取jpg -->
+	<thread_type thread_type="0"/>  		<!-- 进程类型：0:每个path对应一个进程(最多4个)；1:所有path的图片平均分成threadNum个进程 -->
+	<thread_num thread_num="4"/>  			<!-- thread_type=1时进程个数 -->
+	<path path="G:\bei6\20250918081801-xia\相机1"/>
+	<path path="G:\bei6\20250918081801-xia\相机2"/>
+	<path path="G:\bei6\20250918081801-xia\相机4"/>
+	<path path="G:\bei6\20250918081801-xia\相机5"/>
+</pthreading>
+</root>
+
+
+
+
+<!-- PS: -->
+<!-- 多线程参数 pthreading.exe -->
+<!-- path最多两级目录：且会跳过文件夹名《flaws》《result》《show》的 -->
