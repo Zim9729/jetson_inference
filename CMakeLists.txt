@@ -159,6 +159,8 @@ target_include_directories(proj2
 
 target_compile_definitions(proj2
     PRIVATE
+        UNICODE
+        _UNICODE
         _CRT_SECURE_NO_WARNINGS
         DC_EXPORTS
 )
