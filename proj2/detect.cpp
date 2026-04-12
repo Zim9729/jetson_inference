@@ -1,24 +1,88 @@
 #include "detect.h"
+#include <algorithm>
+#include <chrono>
+#include <filesystem>
 #include <iostream>
-#include <io.h>
 #include <string>
 #include "myxml.h"
-#include <filesystem>
 #include "myjson.h"
 #include "mylog.h"
-#include <direct.h> 
 #include <mutex>
+#include <random>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <rpc.h>
 #include <rpcndr.h>
-#include <random> 
-#include <chrono> 
-#include <filesystem>
+#include <Windows.h>
+#endif
+
+#ifdef __linux__
+#include <unistd.h>
+#include <uuid/uuid.h>
+#endif
+
 namespace fs = std::filesystem;
 using namespace std;
 
 
 std::mutex mtx;
 Cjson m_objj;
+
+namespace {
+
+fs::path resolve_runtime_root()
+{
+#ifdef _WIN32
+    wchar_t module_path[MAX_PATH] = {};
+    const DWORD module_length = GetModuleFileNameW(nullptr, module_path, MAX_PATH);
+    if (module_length > 0 && module_length < MAX_PATH) {
+        return fs::path(module_path).parent_path();
+    }
+#elif defined(__linux__)
+    char exe_path[4096] = {};
+    const ssize_t exe_length = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (exe_length > 0) {
+        exe_path[exe_length] = '\0';
+        return fs::path(exe_path).parent_path();
+    }
+#endif
+
+    std::error_code ec;
+    const fs::path current_path = fs::current_path(ec);
+    return ec ? fs::path(".") : current_path;
+}
+
+std::string create_runtime_uuid()
+{
+    std::string uuid_str;
+
+#ifdef _WIN32
+    UUID uuid;
+    UuidCreate(&uuid);
+    unsigned char* pBuf = nullptr;
+    UuidToStringA(&uuid, &pBuf);
+    if (pBuf != nullptr) {
+        uuid_str.assign(reinterpret_cast<char*>(pBuf));
+        RpcStringFreeA(&pBuf);
+    }
+#elif defined(__linux__)
+    uuid_t uuid;
+    char uuid_buffer[37] = {};
+    uuid_generate(uuid);
+    uuid_unparse_lower(uuid, uuid_buffer);
+    uuid_str.assign(uuid_buffer);
+#else
+    uuid_str = std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+#endif
+
+    uuid_str.erase(std::remove(uuid_str.begin(), uuid_str.end(), '-'), uuid_str.end());
+    return uuid_str;
+}
+
+} // namespace
 
 Cdetect::Cdetect(int* iPID)
 {
@@ -64,15 +128,8 @@ int Cdetect::initrt()
 {
     Cxml cxml;
     int istate = -1;
-    char FilePath[255];
-    wchar_t wcFilePath[255];
-    GetModuleFileName(NULL, wcFilePath, 255);
-    size_t len = std::wcstombs(nullptr, wcFilePath, 0) + 1;
-    std::wcstombs(FilePath, wcFilePath, len);
-
-    (strrchr(FilePath, '\\'))[1] = 0;
-    std::string sexeFilePath = FilePath;
-    std::string config_path = sexeFilePath + "/config";
+    const fs::path runtime_root = resolve_runtime_root();
+    std::string config_path = (runtime_root / "config").string();
     if (!fs::exists(config_path)) {
         ShowLog(ERROR_1, _T("#####ERROR: config not exists: "), config_path, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
         m_ini_state = -1;
@@ -173,21 +230,11 @@ int Cdetect::newobj(iniInfo config_param)
 
 void CreateDird(const std::string& directoryPath)
 {
-    std::string tmpDirPath;
-    for (uint32_t i = 0; i < directoryPath.size(); ++i)
-    {
-        tmpDirPath.push_back(directoryPath[i]);
-        if (tmpDirPath[i] == '/')
-        {
-            if (_access(tmpDirPath.c_str(), 0) != 0)
-            {
-                int32_t ret = _mkdir(tmpDirPath.c_str());
-                if (ret != 0)
-                    return;
-            }
-        }
-    }
-    _mkdir(tmpDirPath.c_str());
+    if (directoryPath.empty())
+        return;
+
+    std::error_code ec;
+    fs::create_directories(fs::path(directoryPath), ec);
 }
 
 std::string get_disease_name(nodeInfo node)
@@ -825,14 +872,7 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         istate = 1;
         for (int i = 0;i < (int)vOutflaws.size();i++)
         {             
-            UUID uuid;
-            UuidCreate(&uuid);
-            unsigned char* pBuf;
-            UuidToStringA(&uuid, &pBuf);
-            std::string uuid_str = "";
-            uuid_str.assign(reinterpret_cast<char*>(pBuf));
-            RpcStringFreeA(&pBuf);
-            uuid_str.erase(std::remove(uuid_str.begin(), uuid_str.end(), '-'), uuid_str.end()); 
+            std::string uuid_str = create_runtime_uuid();
             vOutflaws[i].suuid = uuid_str;
             std::string sinfolog = cv::format("%s[out]%s type=%s  UUID=%s",
                 m_sPID, 
