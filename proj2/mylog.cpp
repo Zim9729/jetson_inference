@@ -151,12 +151,14 @@ int CETLog::pub_GetLogLevel()
 
 #else
 
+#include <array>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <system_error>
+#include <unistd.h>
 
 namespace
 {
@@ -189,10 +191,29 @@ std::string FormatIndex(int index)
     return stream.str();
 }
 
+std::filesystem::path GetExecutableDirectory()
+{
+    std::array<char, 4096> exePath = {};
+    const auto length = readlink("/proc/self/exe", exePath.data(), exePath.size() - 1);
+    if (length <= 0)
+    {
+        return {};
+    }
+
+    exePath[static_cast<std::size_t>(length)] = '\0';
+    return std::filesystem::path(exePath.data()).parent_path();
+}
+
 std::filesystem::path GetLogDirectory()
 {
+    const std::filesystem::path exeDir = GetExecutableDirectory();
+    if (exeDir.empty())
+    {
+        return {};
+    }
+
     std::error_code ec;
-    const std::filesystem::path logDir = std::filesystem::current_path() / "log";
+    const std::filesystem::path logDir = exeDir / "log";
     std::filesystem::create_directories(logDir, ec);
     return logDir;
 }
@@ -200,6 +221,11 @@ std::filesystem::path GetLogDirectory()
 std::filesystem::path SelectLogFile(const std::string& appName)
 {
     const std::filesystem::path logDir = GetLogDirectory();
+    if (logDir.empty())
+    {
+        return {};
+    }
+
     for (int index = 0;; ++index)
     {
         const std::filesystem::path candidate = logDir /
@@ -233,6 +259,11 @@ void CETLog::pub_WriteDownLog(const std::string& appName, const std::string& aut
     const std::string& filename, const std::string& log, const std::string& code, int lngLine)
 {
     const std::filesystem::path logPath = SelectLogFile(appName);
+    if (logPath.empty())
+    {
+        return;
+    }
+
     std::ofstream stream(logPath, std::ios::out | std::ios::app);
     if (!stream.is_open())
     {
