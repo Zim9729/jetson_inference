@@ -58,3 +58,85 @@ foreach(cfg Debug Release RelWithDebInfo MinSizeRel)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfg_upper} "${RELEASE_DIR}")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfg_upper} "${RELEASE_DIR}")
 endforeach()
+
+set(PROJ2_SOURCES
+    "${PROJECT_ROOT}/proj2/area.cpp"
+    "${PROJECT_ROOT}/proj2/DetAlgorithm.cpp"
+    "${PROJECT_ROOT}/proj2/detect.cpp"
+    "${PROJECT_ROOT}/proj2/element.cpp"
+    "${PROJECT_ROOT}/proj2/mylog.cpp"
+    "${PROJECT_ROOT}/proj2/koujian.cpp"
+    "${PROJECT_ROOT}/proj2/mycommon.cpp"
+    "${PROJECT_ROOT}/proj2/proj2.cpp"
+    "${PROJECT_ROOT}/proj2/tensorrt.cpp"
+    "${PROJECT_ROOT}/proj2/yolov5Trt.cpp"
+)
+
+if(EXISTS "${PROJECT_ROOT}/proj2/proj2.rc")
+    list(APPEND PROJ2_SOURCES
+        "${PROJECT_ROOT}/proj2/proj2.rc"
+    )
+endif()
+
+set(SHELL_SOURCES
+    "${PROJECT_ROOT}/shell/shell.cpp"
+)
+
+add_library(pugixml_vendor STATIC
+    "${PUGIXML_DIR}/pugixml.cpp"
+)
+
+target_include_directories(pugixml_vendor
+    PUBLIC
+        "${PUGIXML_DIR}"
+)
+
+add_library(proj2 SHARED ${PROJ2_SOURCES})
+
+target_include_directories(proj2
+    PRIVATE
+        "${PROJECT_ROOT}/proj2"
+        "${PROJECT_ROOT}/public"
+        "${BOOST_INCLUDE_DIR}"
+        "${JSON_INCLUDE_DIR}"
+        "${PUGIXML_DIR}"
+        "${OPENCV_INCLUDE_DIR}"
+        "${CUDA_INCLUDE_DIR}"
+        "${TENSORRT_INCLUDE_DIR}"
+)
+
+target_compile_definitions(proj2
+    PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        DC_EXPORTS
+)
+
+target_link_libraries(proj2
+    PRIVATE
+        pugixml_vendor
+)
+
+set_target_properties(proj2 PROPERTIES
+    OUTPUT_NAME "proj2"
+)
+
+add_executable(shell ${SHELL_SOURCES})
+
+target_include_directories(shell
+    PRIVATE
+        "${PROJECT_ROOT}/shell"
+        "${PROJECT_ROOT}/public"
+        "${PROJECT_ROOT}/proj2"
+        "${BOOST_INCLUDE_DIR}"
+        "${JSON_INCLUDE_DIR}"
+        "${OPENCV_INCLUDE_DIR}"
+)
+
+target_compile_definitions(shell
+    PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+)
+
+set_target_properties(shell PROPERTIES
+    OUTPUT_NAME "shell"
+)
