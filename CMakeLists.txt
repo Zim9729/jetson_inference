@@ -28,6 +28,50 @@ set(CUDA_INCLUDE_DIR "${PUBLIC_DIR}/Cuda12.0/include")
 set(CUDA_LIB_DIR "${PUBLIC_DIR}/Cuda12.0/lib/x64")
 set(TENSORRT_INCLUDE_DIR "${PUBLIC_DIR}/TensorRT-8.6/include")
 set(TENSORRT_LIB_DIR "${PUBLIC_DIR}/TensorRT-8.6/lib")
+set(OPENCV_WORLD_LIB opencv_world460)
+set(CUDA_X64_LIBS
+    cudart
+    cublas
+    cublasLt
+    cusolver
+    cusparse
+)
+set(TENSORRT_X64_LIBS
+    nvinfer
+    nvinfer_plugin
+    nvinfer_dispatch
+    nvonnxparser
+    nvparsers
+)
+
+set(VS_ATL_INCLUDE_DIR "")
+set(VS_ATL_X64_LIB_DIR "")
+if(MSVC AND CMAKE_GENERATOR MATCHES "^Visual Studio")
+    find_program(VSWHERE_EXE
+        NAMES vswhere.exe
+        PATHS "C:/Program Files (x86)/Microsoft Visual Studio/Installer"
+        NO_DEFAULT_PATH
+    )
+
+    if(VSWHERE_EXE)
+        execute_process(
+            COMMAND "${VSWHERE_EXE}" -version "[16.0,17.0)" -products * -requires Microsoft.VisualStudio.Component.VC.ATL -property installationPath
+            OUTPUT_VARIABLE VS_ATL_INSTANCE
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        if(VS_ATL_INSTANCE)
+            file(GLOB VS_ATL_ROOTS LIST_DIRECTORIES TRUE "${VS_ATL_INSTANCE}/VC/Tools/MSVC/*/atlmfc")
+            if(VS_ATL_ROOTS)
+                list(SORT VS_ATL_ROOTS COMPARE NATURAL ORDER DESCENDING)
+                list(GET VS_ATL_ROOTS 0 VS_ATL_ROOT)
+                set(VS_ATL_INCLUDE_DIR "${VS_ATL_ROOT}/include")
+                set(VS_ATL_X64_LIB_DIR "${VS_ATL_ROOT}/lib/x64")
+                message(STATUS "Using ATL/MFC from ${VS_ATL_ROOT}")
+            endif()
+        endif()
+    endif()
+endif()
 
 foreach(required_dir
     "${PUBLIC_DIR}"
@@ -93,16 +137,24 @@ target_include_directories(pugixml_vendor
 
 add_library(proj2 SHARED ${PROJ2_SOURCES})
 
+set(PROJ2_PRIVATE_INCLUDE_DIRS
+    "${PROJECT_ROOT}/proj2"
+    "${PROJECT_ROOT}/public"
+    "${BOOST_INCLUDE_DIR}"
+    "${JSON_INCLUDE_DIR}"
+    "${PUGIXML_DIR}"
+    "${OPENCV_INCLUDE_DIR}"
+    "${CUDA_INCLUDE_DIR}"
+    "${TENSORRT_INCLUDE_DIR}"
+)
+
+if(VS_ATL_INCLUDE_DIR)
+    list(APPEND PROJ2_PRIVATE_INCLUDE_DIRS "${VS_ATL_INCLUDE_DIR}")
+endif()
+
 target_include_directories(proj2
     PRIVATE
-        "${PROJECT_ROOT}/proj2"
-        "${PROJECT_ROOT}/public"
-        "${BOOST_INCLUDE_DIR}"
-        "${JSON_INCLUDE_DIR}"
-        "${PUGIXML_DIR}"
-        "${OPENCV_INCLUDE_DIR}"
-        "${CUDA_INCLUDE_DIR}"
-        "${TENSORRT_INCLUDE_DIR}"
+        ${PROJ2_PRIVATE_INCLUDE_DIRS}
 )
 
 target_compile_definitions(proj2
@@ -111,9 +163,28 @@ target_compile_definitions(proj2
         DC_EXPORTS
 )
 
+set(PROJ2_PRIVATE_LINK_DIRS
+    "${OPENCV_LIB_DIR}"
+    "${CUDA_LIB_DIR}"
+    "${TENSORRT_LIB_DIR}"
+)
+
+if(VS_ATL_X64_LIB_DIR)
+    list(APPEND PROJ2_PRIVATE_LINK_DIRS "${VS_ATL_X64_LIB_DIR}")
+endif()
+
+target_link_directories(proj2
+    PRIVATE
+        ${PROJ2_PRIVATE_LINK_DIRS}
+)
+
 target_link_libraries(proj2
     PRIVATE
         pugixml_vendor
+        "${OPENCV_WORLD_LIB}"
+        ${TENSORRT_X64_LIBS}
+        ${CUDA_X64_LIBS}
+        Rpcrt4
 )
 
 set_target_properties(proj2 PROPERTIES
@@ -135,6 +206,16 @@ target_include_directories(shell
 target_compile_definitions(shell
     PRIVATE
         _CRT_SECURE_NO_WARNINGS
+)
+
+target_link_directories(shell
+    PRIVATE
+        "${OPENCV_LIB_DIR}"
+)
+
+target_link_libraries(shell
+    PRIVATE
+        "${OPENCV_WORLD_LIB}"
 )
 
 set_target_properties(shell PROPERTIES
