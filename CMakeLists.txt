@@ -24,10 +24,11 @@ set(PUGIXML_DIR "${PUBLIC_DIR}/pugixml1.15")
 set(OPENCV_INCLUDE_DIR "${PUBLIC_DIR}/OpenCV4.6.0/include")
 set(OPENCV_LIB_DIR "${PUBLIC_DIR}/OpenCV4.6.0/lib")
 set(OPENCV_BIN_DIR "${PUBLIC_DIR}/OpenCV4.6.0/bin")
-set(CUDA_INCLUDE_DIR "${PUBLIC_DIR}/Cuda12.0/include")
-set(CUDA_LIB_DIR "${PUBLIC_DIR}/Cuda12.0/lib/x64")
-set(TENSORRT_INCLUDE_DIR "${PUBLIC_DIR}/TensorRT-8.6/include")
-set(TENSORRT_LIB_DIR "${PUBLIC_DIR}/TensorRT-8.6/lib")
+set(CUDA_INCLUDE_DIR "${PUBLIC_DIR}/CUDA11.8/include")
+set(CUDA_LIB_DIR "${PUBLIC_DIR}/CUDA11.8/lib/x64")
+set(CUDA_BIN_DIR "${PUBLIC_DIR}/CUDA11.8/bin")
+set(TENSORRT_INCLUDE_DIR "${PUBLIC_DIR}/TensorRT-8.5.2.2/include")
+set(TENSORRT_LIB_DIR "${PUBLIC_DIR}/TensorRT-8.5.2.2/lib")
 set(STAGE_RUNTIME_SCRIPT "${PROJECT_ROOT}/cmake/StageRuntime.cmake")
 set(OPENCV_WORLD_LIB opencv_world460)
 set(CUDA_X64_LIBS
@@ -40,7 +41,6 @@ set(CUDA_X64_LIBS
 set(TENSORRT_X64_LIBS
     nvinfer
     nvinfer_plugin
-    nvinfer_dispatch
     nvonnxparser
     nvparsers
 )
@@ -48,9 +48,13 @@ set(STAGE_RUNTIME_DLL_INPUTS
     "${OPENCV_BIN_DIR}/opencv_world460.dll"
     "${OPENCV_BIN_DIR}/opencv_videoio_ffmpeg460_64.dll"
     "${OPENCV_BIN_DIR}/opencv_videoio_msmf460_64.dll"
+    "${CUDA_BIN_DIR}/cudart64_110.dll"
+    "${CUDA_BIN_DIR}/cublas64_11.dll"
+    "${CUDA_BIN_DIR}/cublasLt64_11.dll"
+    "${CUDA_BIN_DIR}/cusolver64_11.dll"
+    "${CUDA_BIN_DIR}/cusparse64_11.dll"
     "${TENSORRT_LIB_DIR}/nvinfer.dll"
     "${TENSORRT_LIB_DIR}/nvinfer_plugin.dll"
-    "${TENSORRT_LIB_DIR}/nvinfer_dispatch.dll"
     "${TENSORRT_LIB_DIR}/nvinfer_builder_resource.dll"
     "${TENSORRT_LIB_DIR}/nvonnxparser.dll"
     "${TENSORRT_LIB_DIR}/nvparsers.dll"
@@ -248,6 +252,7 @@ add_custom_command(
         -DPROJECT_ROOT=${PROJECT_ROOT}
         -DRELEASE_DIR=${RELEASE_DIR}
         -DOPENCV_BIN_DIR=${OPENCV_BIN_DIR}
+        -DCUDA_BIN_DIR=${CUDA_BIN_DIR}
         -DTENSORRT_LIB_DIR=${TENSORRT_LIB_DIR}
         -P "${STAGE_RUNTIME_SCRIPT}"
     COMMAND "${CMAKE_COMMAND}" -E touch "${STAGE_RUNTIME_STAMP}"
