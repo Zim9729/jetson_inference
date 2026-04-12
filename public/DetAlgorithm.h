@@ -1,7 +1,11 @@
 #pragma once
 
 #if defined(_WIN32)
+#if defined(DC_EXPORTS)
 #define DET_API __declspec(dllexport)
+#else
+#define DET_API __declspec(dllimport)
+#endif
 #elif defined(__linux__)
 #define DET_API __attribute__((visibility("default")))
 #else
