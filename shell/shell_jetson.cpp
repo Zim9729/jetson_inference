@@ -1,14 +1,27 @@
 #include <dlfcn.h>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <sstream>
+#include <limits.h>
 #include <string>
+#include <unistd.h>
 
 #include <nlohmann/json.hpp>
 
 using DetectFn = char* (*)(char* file_Data, int* det_state, int* iPID);
 namespace fs = std::filesystem;
+
+static fs::path get_executable_dir()
+{
+    std::string exe_path(PATH_MAX, '\0');
+    const ssize_t length = readlink("/proc/self/exe", exe_path.data(), exe_path.size() - 1);
+    if (length <= 0)
+    {
+        return {};
+    }
+
+    exe_path.resize(static_cast<size_t>(length));
+    return fs::path(exe_path).parent_path();
+}
 
 static void test_one_jpg(const std::string& path, DetectFn fnDetect, int pid)
 {
@@ -36,10 +49,18 @@ int main()
         return 0;
     }
 
-    void* handle = dlopen("./libproj2.so", RTLD_NOW);
+    const fs::path executable_dir = get_executable_dir();
+    if (executable_dir.empty())
+    {
+        std::cerr << "Failed to resolve executable directory." << std::endl;
+        return 1;
+    }
+
+    const fs::path library_path = executable_dir / "libproj2.so";
+    void* handle = dlopen(library_path.c_str(), RTLD_NOW);
     if (!handle)
     {
-        std::cerr << "libproj2.so load failed: " << dlerror() << std::endl;
+        std::cerr << "libproj2.so load failed from " << library_path << ": " << dlerror() << std::endl;
         return 1;
     }
 
@@ -52,10 +73,20 @@ int main()
     }
 
     fs::path p(input_path);
-    if (fs::is_regular_file(p))
+    std::error_code ec;
+    if (!fs::is_regular_file(p, ec))
     {
-        test_one_jpg(input_path, fnDetect, pid);
+        std::cerr << "Input path is not a regular file: " << input_path;
+        if (ec)
+        {
+            std::cerr << " (" << ec.message() << ")";
+        }
+        std::cerr << std::endl;
+        dlclose(handle);
+        return 1;
     }
+
+    test_one_jpg(input_path, fnDetect, pid);
 
     dlclose(handle);
     return 0;
