@@ -1,0 +1,39 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# MSVC build outputs
+Debug/
+Release/
+x64/
+x86/
+release/
+ipch/
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.tlog
+*.lastbuildstate
+*.recipe
+*.log
+*.tmp
+*.cache
+*.aps
+
+# CMake / generated build folders
+out/
+build/
+
+# Local runtime and tool state
+.omx/
+log/
+
+# Python odds and ends if used for local scripts
+__pycache__/
+*.pyc
+
+public/
