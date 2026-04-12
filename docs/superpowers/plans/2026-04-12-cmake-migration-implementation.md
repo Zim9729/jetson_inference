@@ -6,7 +6,7 @@
 
 **Architecture:** Add a root `CMakeLists.txt` and a small helper script under `cmake/` that define the `proj2` DLL and `shell` EXE, wire them to the vendored dependencies under `public/`, and stage runtime assets into `release/` after build. Preserve the existing source tree and runtime assumptions instead of refactoring code during the migration.
 
-**Tech Stack:** CMake, MSVC/Visual Studio 2022 generator, Windows x64, TensorRT 8.6, CUDA 12.0, OpenCV 4.6.0, Boost headers, nlohmann/json headers, pugixml source build.
+**Tech Stack:** CMake, MSVC/Visual Studio 2019 generator, Windows x64, TensorRT 8.6, CUDA 12.0, OpenCV 4.6.0, Boost headers, nlohmann/json headers, pugixml source build.
 
 ---
 
@@ -52,14 +52,14 @@ The Visual Studio files remain as a temporary fallback until the CMake build is 
 
 - Create: `E:/0_project/proj2_20260411/CMakeLists.txt`
 - Create: `E:/0_project/proj2_20260411/CMakePresets.json`
-- Test: configure in `E:/0_project/proj2_20260411/build/cmake-vs2022-x64`
+- Test: configure in `E:/0_project/proj2_20260411/build/cmake-vs2019-x64`
 
 - [ ] **Step 1: Verify CMake configure currently fails because no root build file exists**
 
 Run:
 
 ```powershell
-cmake -S E:/0_project/proj2_20260411 -B E:/0_project/proj2_20260411/build/cmake-vs2022-x64 -G "Visual Studio 17 2022" -A x64
+cmake -S E:/0_project/proj2_20260411 -B E:/0_project/proj2_20260411/build/cmake-vs2019-x64 -G "Visual Studio 17 2019" -A x64
 ```
 
 Expected: FAIL with an error equivalent to "The source directory does not appear to contain CMakeLists.txt".
@@ -145,10 +145,10 @@ Write this file:
   },
   "configurePresets": [
     {
-      "name": "vs2022-x64",
-      "displayName": "Visual Studio 2022 x64",
-      "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/cmake-vs2022-x64",
+      "name": "vs2019-x64",
+      "displayName": "Visual Studio 2019 x64",
+      "generator": "Visual Studio 17 2019",
+      "binaryDir": "${sourceDir}/build/cmake-vs2019-x64",
       "architecture": "x64",
       "cacheVariables": {
         "CMAKE_POLICY_DEFAULT_CMP0091": "NEW"
@@ -157,8 +157,8 @@ Write this file:
   ],
   "buildPresets": [
     {
-      "name": "vs2022-x64-release",
-      "configurePreset": "vs2022-x64",
+      "name": "vs2019-x64-release",
+      "configurePreset": "vs2019-x64",
       "configuration": "Release"
     }
   ]
@@ -170,7 +170,7 @@ Write this file:
 Run:
 
 ```powershell
-cmake --preset vs2022-x64
+cmake --preset vs2019-x64
 ```
 
 Expected: PASS. Configure should complete without defining `proj2` or `shell` yet.
@@ -194,7 +194,7 @@ git commit -m "Add the root CMake entrypoint for Windows x64 parity migration"
 Run:
 
 ```powershell
-cmake --build E:/0_project/proj2_20260411/build/cmake-vs2022-x64 --config Release --target proj2
+cmake --build E:/0_project/proj2_20260411/build/cmake-vs2019-x64 --config Release --target proj2
 ```
 
 Expected: FAIL with an error equivalent to "target proj2 does not exist".
@@ -277,7 +277,7 @@ set_target_properties(shell PROPERTIES
 Run:
 
 ```powershell
-cmake --preset vs2022-x64
+cmake --preset vs2019-x64
 ```
 
 Expected: PASS with both `proj2` and `shell` known to the generated solution.
@@ -287,7 +287,7 @@ Expected: PASS with both `proj2` and `shell` known to the generated solution.
 Run:
 
 ```powershell
-cmake --build E:/0_project/proj2_20260411/build/cmake-vs2022-x64 --config Release --target proj2 shell
+cmake --build E:/0_project/proj2_20260411/build/cmake-vs2019-x64 --config Release --target proj2 shell
 ```
 
 Expected: FAIL with unresolved external or missing library errors, proving the target graph is now correct and the next remaining work is explicit linkage.
@@ -349,7 +349,7 @@ endif()
 Run:
 
 ```powershell
-cmake --build E:/0_project/proj2_20260411/build/cmake-vs2022-x64 --config Release
+cmake --build E:/0_project/proj2_20260411/build/cmake-vs2019-x64 --config Release
 ```
 
 Expected: PASS. `release/proj2.dll` and `release/shell.exe` should be created.
@@ -488,7 +488,7 @@ If missing, add them without ignoring:
 Run:
 
 ```powershell
-cmake --build E:/0_project/proj2_20260411/build/cmake-vs2022-x64 --config Release
+cmake --build E:/0_project/proj2_20260411/build/cmake-vs2019-x64 --config Release
 Get-ChildItem E:/0_project/proj2_20260411/release
 Get-ChildItem E:/0_project/proj2_20260411/release/config
 ```
@@ -575,7 +575,7 @@ git commit -m "Verify the CMake-built release layout can launch the shell runtim
 ### Type and naming consistency
 
 - Root build file path is consistently `E:/0_project/proj2_20260411/CMakeLists.txt`
-- Preset name is consistently `vs2022-x64`
+- Preset name is consistently `vs2019-x64`
 - Output directory is consistently `E:/0_project/proj2_20260411/release`
 - Target names are consistently `proj2` and `shell`
 
