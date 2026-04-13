@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.16)
 
 project(proj2_20260411 LANGUAGES CXX)
 
@@ -130,7 +130,8 @@ if(WIN32)
             if(VS_ATL_INSTANCE)
                 file(GLOB VS_ATL_ROOTS LIST_DIRECTORIES TRUE "${VS_ATL_INSTANCE}/VC/Tools/MSVC/*/atlmfc")
                 if(VS_ATL_ROOTS)
-                    list(SORT VS_ATL_ROOTS COMPARE NATURAL ORDER DESCENDING)
+                    list(SORT VS_ATL_ROOTS)
+                    list(REVERSE VS_ATL_ROOTS)
                     list(GET VS_ATL_ROOTS 0 VS_ATL_ROOT)
                     set(VS_ATL_INCLUDE_DIR "${VS_ATL_ROOT}/include")
                     set(VS_ATL_X64_LIB_DIR "${VS_ATL_ROOT}/lib/x64")
@@ -282,26 +283,42 @@ elseif(UNIX AND NOT APPLE)
         HINTS
             /usr/local/cuda/include
             /usr/include
-        REQUIRED
     )
-    find_library(CUDART_LIB cudart REQUIRED)
-    find_library(CUBLAS_LIB cublas REQUIRED)
-    find_library(CUBLASLT_LIB cublasLt REQUIRED)
-    find_library(CUSOLVER_LIB cusolver REQUIRED)
-    find_library(CUSPARSE_LIB cusparse REQUIRED)
+    find_library(CUDART_LIB cudart)
+    find_library(CUBLAS_LIB cublas)
+    find_library(CUBLASLT_LIB cublasLt)
+    find_library(CUSOLVER_LIB cusolver)
+    find_library(CUSPARSE_LIB cusparse)
     find_path(TENSORRT_INCLUDE_DIR NvInfer.h
         HINTS
             /usr/include/aarch64-linux-gnu
             /usr/include
             /usr/src/tensorrt/include
-        REQUIRED
     )
-    find_library(TENSORRT_LIB nvinfer REQUIRED)
-    find_library(TENSORRT_PLUGIN_LIB nvinfer_plugin REQUIRED)
-    find_library(TENSORRT_ONNX_LIB nvonnxparser REQUIRED)
+    find_library(TENSORRT_LIB nvinfer)
+    find_library(TENSORRT_PLUGIN_LIB nvinfer_plugin)
+    find_library(TENSORRT_ONNX_LIB nvonnxparser)
     find_library(TENSORRT_PARSERS_LIB nvparsers)
-    find_library(UUID_LIB uuid REQUIRED)
-    find_library(DL_LIB dl REQUIRED)
+    find_library(UUID_LIB uuid)
+    find_library(DL_LIB dl)
+
+    foreach(required_var
+        CUDA_INCLUDE_DIR
+        CUDART_LIB
+        CUBLAS_LIB
+        CUBLASLT_LIB
+        CUSOLVER_LIB
+        CUSPARSE_LIB
+        TENSORRT_INCLUDE_DIR
+        TENSORRT_LIB
+        TENSORRT_PLUGIN_LIB
+        TENSORRT_ONNX_LIB
+        UUID_LIB
+        DL_LIB)
+        if(NOT ${required_var})
+            message(FATAL_ERROR "Required Jetson dependency was not found: ${required_var}")
+        endif()
+    endforeach()
 
     add_library(proj2 SHARED ${PROJ2_SOURCES})
 

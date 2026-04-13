@@ -10,6 +10,8 @@ cd /path/to/proj2_20260411
 
 ## 2) 配置构建
 
+Jetson 这台机器上的 CMake 是 **3.16**，所以下面按直接命令行 configure 的方式来，不依赖 `cmake --preset`。
+
 ```bash
 cmake -S . -B build-jetson -DCMAKE_BUILD_TYPE=Release
 ```
@@ -31,6 +33,51 @@ cmake --build build-jetson -j
 
 - `libproj2.so`
 - `shell_jetson`
+
+## 3.1) 如果要在 Jetson 上源码编译，需要先拷贝什么
+
+如果你是**在 Jetson 上直接源码编译**，建议把整个仓库拷过去；如果只问“最少要带哪些”，可以按下面分两类理解：
+
+### 需要一起带到 Jetson 的仓库内容
+
+- `proj2/`
+- `shell/`
+- `cmake/`
+- `config/`
+- `public/DetAlgorithm.h`
+- `public/json-develop/include/`
+- `public/pugixml1.15/`
+- `public/boost_MSVC14.4/include/`
+
+说明：
+
+- `public/DetAlgorithm.h` 是公共接口头文件，源码编译会用到
+- `json-develop`、`boost`、`pugixml` 这几部分在当前工程里属于源码/头文件级依赖
+- `pugixml1.15` 里还有源码文件，CMake 会直接编译它
+
+### 不需要从这个仓库复制到 Jetson 的内容
+
+- `public/OpenCV4.6.0/`
+- `public/CUDA11.8/`
+- `public/TensorRT-8.5.2.2/`
+- `public/onnx2trt.exe`
+
+说明：
+
+- Jetson 源码编译应使用 **JetPack 自带的原生 CUDA / TensorRT**
+- OpenCV 也应该使用 Jetson 上安装的系统包或原生库
+- 上面这些目录主要是 Windows vendored 资源，不是 Jetson 源码编译必需品
+
+### Jetson 侧应该已有的系统依赖
+
+Jetson 上应安装好这些系统级依赖，而不是从仓库复制：
+
+- CUDA / TensorRT（JetPack 提供）
+- OpenCV 开发包
+- `uuid` 开发库
+- `dl`、`pthread` 等系统库
+
+如果这些系统依赖不在默认路径里，再通过 `CMAKE_PREFIX_PATH` 或 `find_path` / `find_library` 的方式指向它们，而不是把 Windows 目录直接拷过去。
 
 ## 4) 准备运行目录
 
