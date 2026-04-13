@@ -222,6 +222,7 @@ if(WIN32)
         PRIVATE
             "${PROJECT_ROOT}/shell"
             "${PROJECT_ROOT}/public"
+            "${PUGIXML_DIR}"
             "${PROJECT_ROOT}/proj2"
             "${BOOST_INCLUDE_DIR}"
             "${JSON_INCLUDE_DIR}"
@@ -282,25 +283,88 @@ elseif(UNIX AND NOT APPLE)
     find_path(CUDA_INCLUDE_DIR cuda_runtime.h
         HINTS
             /usr/local/cuda/include
+            /usr/local/cuda/targets/aarch64-linux/include
             /usr/include
+            /usr/include/aarch64-linux-gnu
     )
-    find_library(CUDART_LIB cudart)
-    find_library(CUBLAS_LIB cublas)
-    find_library(CUBLASLT_LIB cublasLt)
-    find_library(CUSOLVER_LIB cusolver)
-    find_library(CUSPARSE_LIB cusparse)
+    find_library(CUDART_LIB cudart
+        HINTS
+            /usr/local/cuda/lib64
+            /usr/local/cuda/targets/aarch64-linux/lib
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+    )
+    find_library(CUBLAS_LIB cublas
+        HINTS
+            /usr/local/cuda/lib64
+            /usr/local/cuda/targets/aarch64-linux/lib
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+    )
+    find_library(CUBLASLT_LIB cublasLt
+        HINTS
+            /usr/local/cuda/lib64
+            /usr/local/cuda/targets/aarch64-linux/lib
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+    )
+    find_library(CUSOLVER_LIB cusolver
+        HINTS
+            /usr/local/cuda/lib64
+            /usr/local/cuda/targets/aarch64-linux/lib
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+    )
+    find_library(CUSPARSE_LIB cusparse
+        HINTS
+            /usr/local/cuda/lib64
+            /usr/local/cuda/targets/aarch64-linux/lib
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+    )
     find_path(TENSORRT_INCLUDE_DIR NvInfer.h
         HINTS
+            /usr/include/x86_64-linux-gnu
             /usr/include/aarch64-linux-gnu
             /usr/include
             /usr/src/tensorrt/include
     )
-    find_library(TENSORRT_LIB nvinfer)
-    find_library(TENSORRT_PLUGIN_LIB nvinfer_plugin)
-    find_library(TENSORRT_ONNX_LIB nvonnxparser)
-    find_library(TENSORRT_PARSERS_LIB nvparsers)
-    find_library(UUID_LIB uuid)
-    find_library(DL_LIB dl)
+    find_library(TENSORRT_LIB nvinfer
+        HINTS
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+            /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+    find_library(TENSORRT_PLUGIN_LIB nvinfer_plugin
+        HINTS
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+            /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+    find_library(TENSORRT_ONNX_LIB nvonnxparser
+        HINTS
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+            /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+    find_library(TENSORRT_PARSERS_LIB nvparsers
+        HINTS
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+            /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+    find_library(UUID_LIB uuid
+        HINTS
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+            /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+    find_library(DL_LIB dl
+        HINTS
+            /usr/lib/aarch64-linux-gnu
+            /usr/lib
+            /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
 
     foreach(required_var
         CUDA_INCLUDE_DIR
@@ -374,6 +438,7 @@ elseif(UNIX AND NOT APPLE)
         PRIVATE
             "${PROJECT_ROOT}/shell"
             "${PROJECT_ROOT}/public"
+            "${PUGIXML_DIR}"
             "${JSON_INCLUDE_DIR}"
     )
 

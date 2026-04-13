@@ -283,7 +283,7 @@ bool Ctensorrt::ini_trt(MyYolov10Det& model)
     std::string engineFile = model.trtmodel_path;
     ModelStruct* trtModelInfo = &(model.modelStruct);
     ModelMemory* modelMemory = &(model.modelMemory);
-    if (_access(engineFile.c_str(), 0) == -1)
+    if (!path_exists(engineFile))
     {
         //LOG(ERROR) << "#####ERROR: "<< engineFile << "  not exist!!";
         std::string sloginfo = "#####ERROR: " + engineFile + "  not exist!!";

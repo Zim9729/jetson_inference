@@ -1,11 +1,18 @@
 #include <dlfcn.h>
 #include <filesystem>
+#include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <limits.h>
+#include <cctype>
 #include <string>
+#include <sstream>
+#include <unordered_set>
+#include <vector>
 #include <unistd.h>
 
 #include <nlohmann/json.hpp>
+#include <pugixml.hpp>
 
 using DetectFn = char* (*)(char* file_Data, int* det_state, int* iPID);
 namespace fs = std::filesystem;
@@ -23,6 +30,89 @@ static fs::path get_executable_dir()
     return fs::path(exe_path).parent_path();
 }
 
+static std::string to_lower_ascii(std::string value)
+{
+    for (char& ch : value)
+    {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    return value;
+}
+
+static unsigned long long fnv1a_64(const std::string& value)
+{
+    unsigned long long hash = 1469598103934665603ULL;
+    for (unsigned char ch : value)
+    {
+        hash ^= ch;
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+static fs::path checkpoint_path_for_target(const fs::path& target_path)
+{
+    fs::path parent = target_path.parent_path();
+    if (parent.empty())
+    {
+        parent = ".";
+    }
+
+    const std::string checkpoint_name = ".proj2_checkpoint_" + std::to_string(fnv1a_64(target_path.lexically_normal().string())) + ".txt";
+    return parent / checkpoint_name;
+}
+
+static std::unordered_set<std::string> load_checkpoint(const fs::path& checkpoint_path)
+{
+    std::unordered_set<std::string> completed;
+    std::ifstream in(checkpoint_path);
+    if (!in.is_open())
+    {
+        return completed;
+    }
+
+    std::string line;
+    while (std::getline(in, line))
+    {
+        if (!line.empty())
+        {
+            completed.insert(line);
+        }
+    }
+    return completed;
+}
+
+static bool save_checkpoint(const fs::path& checkpoint_path, const std::unordered_set<std::string>& completed)
+{
+    fs::path temp_path = checkpoint_path;
+    temp_path += ".tmp";
+
+    std::ofstream out(temp_path, std::ios::trunc);
+    if (!out.is_open())
+    {
+        return false;
+    }
+
+    for (const std::string& item : completed)
+    {
+        out << item << '\n';
+    }
+
+    out.close();
+
+    std::error_code ec;
+    fs::remove(checkpoint_path, ec);
+    ec.clear();
+    fs::rename(temp_path, checkpoint_path, ec);
+    if (ec)
+    {
+        fs::remove(temp_path, ec);
+        return false;
+    }
+
+    return true;
+}
+
 static void test_one_jpg(const std::string& path, DetectFn fnDetect, int pid)
 {
     nlohmann::json j;
@@ -37,17 +127,166 @@ static void test_one_jpg(const std::string& path, DetectFn fnDetect, int pid)
     }
 }
 
+static void test_one_json(const std::string& path, DetectFn fnDetect, int pid)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        std::cerr << "json open failed: " << path << std::endl;
+        return;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string payload = buffer.str();
+    int det_state = 0;
+    char* result = fnDetect(payload.data(), &det_state, &pid);
+    std::cout << "path=" << path << " state=" << det_state << std::endl;
+    if (result != nullptr)
+    {
+        std::cout << result << std::endl;
+    }
+}
+
+static void process_input_path(const std::string& path, const std::string& json0_jpg1, DetectFn fnDetect, int pid)
+{
+    fs::path p(path);
+    if (!fs::exists(p))
+    {
+        std::cerr << "[path missing] " << path << std::endl;
+        return;
+    }
+
+    if (fs::is_directory(p))
+    {
+        const fs::path checkpoint_path = checkpoint_path_for_target(p);
+        std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
+        std::vector<fs::path> pending_files;
+
+        for (const auto& entry : fs::directory_iterator(p))
+        {
+            if (fs::is_directory(entry.status()))
+            {
+                continue;
+            }
+
+            const std::string ext = to_lower_ascii(entry.path().extension().string());
+            if (json0_jpg1 == "jpg" && (ext == ".jpg" || ext == ".jpeg"))
+            {
+                pending_files.push_back(entry.path());
+            }
+            else if (json0_jpg1 != "jpg" && ext == ".json")
+            {
+                pending_files.push_back(entry.path());
+            }
+        }
+
+        std::sort(pending_files.begin(), pending_files.end(), [](const fs::path& lhs, const fs::path& rhs) {
+            return lhs.string() < rhs.string();
+        });
+
+        for (const fs::path& file_path : pending_files)
+        {
+            const std::string file_path_str = file_path.string();
+            if (completed.find(file_path_str) != completed.end())
+            {
+                std::cout << "[resume skip] " << file_path_str << std::endl;
+                continue;
+            }
+
+            if (json0_jpg1 == "jpg")
+            {
+                test_one_jpg(file_path_str, fnDetect, pid);
+            }
+            else
+            {
+                test_one_json(file_path_str, fnDetect, pid);
+            }
+
+            completed.insert(file_path_str);
+            if (!save_checkpoint(checkpoint_path, completed))
+            {
+                std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
+            }
+        }
+        return;
+    }
+
+    const fs::path checkpoint_path = checkpoint_path_for_target(p);
+    std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
+    if (completed.find(path) != completed.end())
+    {
+        std::cout << "[resume skip] " << path << std::endl;
+        return;
+    }
+
+    const std::string ext = to_lower_ascii(p.extension().string());
+    if (json0_jpg1 == "jpg" && (ext == ".jpg" || ext == ".jpeg"))
+    {
+        test_one_jpg(path, fnDetect, pid);
+        completed.insert(path);
+        if (!save_checkpoint(checkpoint_path, completed))
+        {
+            std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
+        }
+        return;
+    }
+
+    if (json0_jpg1 != "jpg" && ext == ".json")
+    {
+        test_one_json(path, fnDetect, pid);
+        completed.insert(path);
+        if (!save_checkpoint(checkpoint_path, completed))
+        {
+            std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
+        }
+        return;
+    }
+
+    std::cerr << "[unsupported path type] " << path << std::endl;
+}
+
+static bool read_project_paths_from_xml(const fs::path& project_xml_path,
+                                        std::string& json0_jpg1,
+                                        std::vector<std::string>& paths)
+{
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(project_xml_path.string().c_str(), pugi::parse_default, pugi::encoding_utf8);
+    if (!result)
+    {
+        return false;
+    }
+
+    pugi::xml_node pthreading = doc.child("root").child("pthreading");
+    if (pthreading.empty())
+    {
+        return false;
+    }
+
+    pugi::xml_node imgtype = pthreading.child("imgtype");
+    if (!imgtype.empty())
+    {
+        std::string value = imgtype.attribute("json0_jpg1").as_string();
+        if (value == "1")
+            json0_jpg1 = "jpg";
+        else if (value == "0")
+            json0_jpg1 = "json";
+    }
+
+    for (pugi::xml_node path_node : pthreading.children("path"))
+    {
+        std::string path = path_node.attribute("path").as_string();
+        if (!path.empty())
+            paths.push_back(path);
+    }
+
+    return !paths.empty();
+}
+
 int main()
 {
-    std::string input_path;
+    std::string json0_jpg1 = "jpg";
     int pid = 100;
-
-    std::cout << "Please enter the jpg path: ";
-    std::getline(std::cin, input_path);
-    if (input_path.size() < 3)
-    {
-        return 0;
-    }
 
     const fs::path executable_dir = get_executable_dir();
     if (executable_dir.empty())
@@ -72,21 +311,31 @@ int main()
         return 1;
     }
 
-    fs::path p(input_path);
-    std::error_code ec;
-    if (!fs::is_regular_file(p, ec))
+    const fs::path project_xml_path = executable_dir / "config" / "project.xml";
+    std::vector<std::string> project_paths;
+    if (read_project_paths_from_xml(project_xml_path, json0_jpg1, project_paths))
     {
-        std::cerr << "Input path is not a regular file: " << input_path;
-        if (ec)
+        std::cout << "test type is " << json0_jpg1 << " !!!" << std::endl;
+        std::cout << "project.xml paths loaded from: " << project_xml_path << std::endl;
+        for (const std::string& path : project_paths)
         {
-            std::cerr << " (" << ec.message() << ")";
+            process_input_path(path, json0_jpg1, fnDetect, pid);
         }
-        std::cerr << std::endl;
+
         dlclose(handle);
-        return 1;
+        return 0;
     }
 
-    test_one_jpg(input_path, fnDetect, pid);
+    std::string input_path;
+    std::cout << "Please enter the jpg path: ";
+    std::getline(std::cin, input_path);
+    if (input_path.size() < 3)
+    {
+        dlclose(handle);
+        return 0;
+    }
+
+    process_input_path(input_path, json0_jpg1, fnDetect, pid);
 
     dlclose(handle);
     return 0;

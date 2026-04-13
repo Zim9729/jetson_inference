@@ -736,16 +736,16 @@ void Cdetect::change_lianxu_koujian_node(int Imgwidth, int Imgheight, std::vecto
             }
             else
             {
-                int iarea_right = min(Imgwidth-1,max(newloss.arealoc.x + newloss.arealoc.width, flaw.arealoc.x + flaw.arealoc.width));
-                int iarea_bottom = min(Imgheight-1,max(newloss.arealoc.y + newloss.arealoc.height, flaw.arealoc.y + flaw.arealoc.height));
-                newloss.arealoc.x = max(0,min(newloss.arealoc.x, flaw.arealoc.x));
-                newloss.arealoc.y = max(0,min(newloss.arealoc.y, flaw.arealoc.y));              
+                int iarea_right = static_cast<int>((std::min)(static_cast<float>(Imgwidth - 1), (std::max)(static_cast<float>(newloss.arealoc.x + newloss.arealoc.width), static_cast<float>(flaw.arealoc.x + flaw.arealoc.width))));
+                int iarea_bottom = static_cast<int>((std::min)(static_cast<float>(Imgheight - 1), (std::max)(static_cast<float>(newloss.arealoc.y + newloss.arealoc.height), static_cast<float>(flaw.arealoc.y + flaw.arealoc.height))));
+                newloss.arealoc.x = static_cast<int>((std::max)(0.0f, (std::min)(static_cast<float>(newloss.arealoc.x), static_cast<float>(flaw.arealoc.x))));
+                newloss.arealoc.y = static_cast<int>((std::max)(0.0f, (std::min)(static_cast<float>(newloss.arealoc.y), static_cast<float>(flaw.arealoc.y))));              
                 newloss.arealoc.width = iarea_right - newloss.arealoc.x;
                 newloss.arealoc.height = iarea_bottom - newloss.arealoc.y;
-                float iflaw_right = min(Imgwidth - 1, max(newloss.flawloc.val[0] + newloss.flawloc.val[2], flaw.flawloc.val[0] + flaw.flawloc.val[2]));
-                float iflaw_bottom = min(Imgheight - 1, max(newloss.flawloc.val[1] + newloss.flawloc.val[3], flaw.flawloc.val[1] + flaw.flawloc.val[3]));
-                newloss.flawloc.val[0] = max(0, min(newloss.flawloc.val[0], flaw.flawloc.val[0]));
-                newloss.flawloc.val[1] = max(0, min(newloss.flawloc.val[1], flaw.flawloc.val[1]));
+                float iflaw_right = (std::min)(static_cast<float>(Imgwidth - 1), (std::max)(newloss.flawloc.val[0] + newloss.flawloc.val[2], flaw.flawloc.val[0] + flaw.flawloc.val[2]));
+                float iflaw_bottom = (std::min)(static_cast<float>(Imgheight - 1), (std::max)(newloss.flawloc.val[1] + newloss.flawloc.val[3], flaw.flawloc.val[1] + flaw.flawloc.val[3]));
+                newloss.flawloc.val[0] = (std::max)(0.0f, (std::min)(newloss.flawloc.val[0], flaw.flawloc.val[0]));
+                newloss.flawloc.val[1] = (std::max)(0.0f, (std::min)(newloss.flawloc.val[1], flaw.flawloc.val[1]));
                 newloss.flawloc.val[2] = iflaw_right - newloss.flawloc.val[0];
                 newloss.flawloc.val[3] = iflaw_bottom - newloss.flawloc.val[1];
             }

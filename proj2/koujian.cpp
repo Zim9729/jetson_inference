@@ -325,8 +325,8 @@ void Ckoujian::cal_koujian_weiyi(cv::Mat img,
     {
         //std::cout<<i<<std::endl;
         cv::Vec6f rdizuo = vdizuo[i];
-        int iy1 = max(0,rdizuo.val[1]-rdizuo.val[3]);
-        int iy2 = min(iheight-1,rdizuo.val[1]+rdizuo.val[3]*2);
+        int iy1 = static_cast<int>((std::max)(0.0f, rdizuo.val[1] - rdizuo.val[3]));
+        int iy2 = static_cast<int>((std::min)(static_cast<float>(iheight - 1), rdizuo.val[1] + rdizuo.val[3] * 2.0f));
         int ih = rdizuo.val[3];
         for(int j=0;j<(int)vtantiao.size();j++)
         {

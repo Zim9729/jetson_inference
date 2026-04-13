@@ -2,12 +2,26 @@
 #include "myxml.h"
 #include "opencv2/opencv.hpp"
 #include <vector>    //vector
-#include <direct.h>  //_mkdir
-#include "io.h"      //_access
 #include <fstream>
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
 #include "mylogger.h"
+
+#ifdef _WIN32
+#include <direct.h>  //_mkdir
+#include "io.h"      //_access
+#else
+#include <filesystem>
+#endif
+
+inline bool path_exists(const std::string& path)
+{
+#ifdef _WIN32
+    return _access(path.c_str(), 0) == 0;
+#else
+    return std::filesystem::exists(path);
+#endif
+}
 
 #define CHECK(call)                                   \
 do                                                    \

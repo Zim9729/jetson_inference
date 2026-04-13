@@ -45,15 +45,27 @@ cmake --build build-jetson -j
 - `cmake/`
 - `config/`
 - `public/DetAlgorithm.h`
+- `shell/shell_jetson.cpp`
+- `public/pugixml1.15/pugixml.cpp`
 - `public/json-develop/include/`
 - `public/pugixml1.15/`
 - `public/boost_MSVC14.4/include/`
+
+注意：`public/` 在仓库里是被 `.gitignore` 忽略的，所以**不能只靠 Git 拉取后的工作区内容来判断是否完整**。像 `public/pugixml1.15/pugixml.cpp` 这种文件，必须通过完整的文件复制方式单独带到 Jetson，不能依赖 Git 自动同步。
 
 说明：
 
 - `public/DetAlgorithm.h` 是公共接口头文件，源码编译会用到
 - `json-develop`、`boost`、`pugixml` 这几部分在当前工程里属于源码/头文件级依赖
 - `pugixml1.15` 里还有源码文件，CMake 会直接编译它
+- `shell_jetson.cpp` 是 Jetson 端的 Linux 验证壳，不拷过去就会在 `cmake` 配置阶段直接报 `Cannot find source file`
+
+如果你在 Jetson 上执行 `cmake -S . -B build-jetson -DCMAKE_BUILD_TYPE=Release` 时看到：
+
+- `Cannot find source file: .../shell/shell_jetson.cpp`
+- `Cannot find source file: .../public/pugixml1.15/pugixml.cpp`
+
+那就说明源码树没有完整同步，先把这两个文件补齐，再重新 configure。
 
 ### 不需要从这个仓库复制到 Jetson 的内容
 
@@ -107,7 +119,7 @@ cd runtime
 ./shell_jetson
 ```
 
-程序会提示输入 jpg 路径，例如：
+如果 `config/project.xml` 里配置了 `<pthreading><path>`，程序会直接按这些路径顺序处理；如果没有可用路径，才会提示手动输入，例如：
 
 ```bash
 /home/nvidia/test_data/1.jpg
@@ -126,6 +138,29 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/aarch64-linux-gnu:$LD_LIBR
 ```bash
 ./shell_jetson
 ```
+
+## 6.1) 断点续传说明
+
+Jetson 版 `shell_jetson` 现在支持**文件级断点续传**：
+
+- 如果输入的是**目录**，程序会按顺序处理目录下的 `.jpg` / `.jpeg` 或 `.json` 文件
+- 如果输入的是**单个文件**，程序也会记录这个文件的完成状态
+- 每处理完一个文件，程序都会立即更新 checkpoint
+- 下次重新启动时，会自动跳过 checkpoint 中已经完成的文件
+
+checkpoint 文件会生成在**目标路径所在目录旁边**，命名格式为：
+
+```text
+.proj2_checkpoint_<FNV1a64>.txt
+```
+
+其中 `<FNV1a64>` 是对目标路径规范化后的哈希值。
+
+注意事项：
+
+- checkpoint 文件是给同一个目标路径复用的，不要手动改名
+- 如果你改了输入目录路径，程序会生成新的 checkpoint 文件
+- 断点续传只针对当前路径下已处理的文件，不会递归子目录
 
 ## 7) 常见检查点
 

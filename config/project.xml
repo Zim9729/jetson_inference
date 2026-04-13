@@ -12,11 +12,8 @@
 	<exename exename="proj2.exe"/>
 	<imgtype json0_jpg1="1"/>  				<!-- 数据类型：0:读取json文件；1:读取jpg -->
 	<thread_type thread_type="0"/>  		<!-- 进程类型：0:每个path对应一个进程(最多4个)；1:所有path的图片平均分成threadNum个进程 -->
-	<thread_num thread_num="4"/>  			<!-- thread_type=1时进程个数 -->
-	<path path="G:\bei6\20250918081801-xia\相机1"/>
-	<path path="G:\bei6\20250918081801-xia\相机2"/>
-	<path path="G:\bei6\20250918081801-xia\相机4"/>
-	<path path="G:\bei6\20250918081801-xia\相机5"/>
+	<thread_num thread_num="1"/>  			<!-- thread_type=1时进程个数 -->
+	<path path="E:\0_project\proj2_20260411\test_data"/>
 </pthreading>
 </root>
 

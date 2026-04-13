@@ -3,12 +3,17 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include "nlohmann/json.hpp"
 #include <opencv2/opencv.hpp>
 #include "boost/archive/iterators/binary_from_base64.hpp"
 #include "boost/archive/iterators/transform_width.hpp"
 #include "mylog.h"
 #include "mycommon.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 class Cjson {
 public:
@@ -19,11 +24,13 @@ public:
     // UTF8字符串转成GBK字符串
     std::string U2G(const std::string& utf8)
     {
+#ifdef _WIN32
         int nwLen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, NULL, 0);
         wchar_t* pwBuf = new wchar_t[nwLen + 1];
         memset(pwBuf, 0, nwLen * 2 + 2);
         MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), utf8.length(), pwBuf, nwLen);
         int nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+
         char* pBuf = new char[nLen + 1];
         memset(pBuf, 0, nLen + 1);
         WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
@@ -33,16 +40,21 @@ public:
         pBuf = NULL;
         pwBuf = NULL;
         return retStr;
+#else
+        return utf8;
+#endif
     }
 
 // GBK字符串转成json识别的UTF8字符串
     std::string G2U(const std::string& gbk)
     {
+#ifdef _WIN32
         int nwLen = ::MultiByteToWideChar(CP_ACP, 0, gbk.c_str(), -1, NULL, 0);
         wchar_t* pwBuf = new wchar_t[nwLen + 1];//加1用于截断字符串
         ZeroMemory(pwBuf, nwLen * 2 + 2);
         ::MultiByteToWideChar(CP_ACP, 0, gbk.c_str(), gbk.length(), pwBuf, nwLen);
         int nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+
         char* pBuf = new char[nLen + 1];
         ZeroMemory(pBuf, nLen + 1);
         ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
@@ -52,6 +64,9 @@ public:
         pwBuf = NULL;
         pBuf = NULL;
         return retStr;
+#else
+        return gbk;
+#endif
     }
 
     //使用Boost Base64解码字符串

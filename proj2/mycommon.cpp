@@ -1,6 +1,9 @@
 #include "mycommon.h"
+#ifdef _WIN32
 #include <io.h>
 #include <direct.h>
+#endif
+#include <filesystem>
 
 CCommon::CCommon()
 {
@@ -255,15 +258,12 @@ void CCommon::CreateDir(const std::string& directoryPath)
         tmpDirPath.push_back(directoryPath[i]);
         if (tmpDirPath[i] == '/')
         {
-            if (_access(tmpDirPath.c_str(), 0) != 0)
-            {
-                int32_t ret = _mkdir(tmpDirPath.c_str());
-                if (ret != 0)
-                    return;
-            }
+            if (!fs::exists(tmpDirPath))
+                fs::create_directory(fs::path(tmpDirPath));
         }
     }
-    _mkdir(tmpDirPath.c_str());
+    if (!tmpDirPath.empty() && !fs::exists(tmpDirPath))
+        fs::create_directory(fs::path(tmpDirPath));
 }
 
 void CCommon::get_padding_areaID(std::vector<nodeInfo>vnodes,
