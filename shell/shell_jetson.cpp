@@ -10,9 +10,13 @@
 #include <unordered_set>
 #include <vector>
 #include <unistd.h>
+#include <chrono>
+#include <thread>
 
 #include <nlohmann/json.hpp>
 #include <pugixml.hpp>
+
+#include "auto_detect.h"
 
 using DetectFn = char* (*)(char* file_Data, int* det_state, int* iPID);
 namespace fs = std::filesystem;
@@ -112,6 +116,12 @@ static bool save_checkpoint(const fs::path& checkpoint_path, const std::unordere
 
     return true;
 }
+
+struct AutoDetectConfig
+{
+    bool enabled = false;
+    int poll_interval_ms = 5000;
+};
 
 static void test_one_jpg(const std::string& path, DetectFn fnDetect, int pid)
 {
@@ -248,7 +258,8 @@ static void process_input_path(const std::string& path, const std::string& json0
 
 static bool read_project_paths_from_xml(const fs::path& project_xml_path,
                                         std::string& json0_jpg1,
-                                        std::vector<std::string>& paths)
+                                        std::vector<std::string>& paths,
+                                        AutoDetectConfig& auto_detect_config)
 {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(project_xml_path.string().c_str(), pugi::parse_default, pugi::encoding_utf8);
@@ -273,6 +284,17 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
             json0_jpg1 = "json";
     }
 
+    pugi::xml_node auto_detect = pthreading.child("auto_detect");
+    if (!auto_detect.empty())
+    {
+        auto_detect_config.enabled = auto_detect.attribute("enable").as_int(0) == 1;
+        auto_detect_config.poll_interval_ms = auto_detect.attribute("poll_interval_ms").as_int(5000);
+        if (auto_detect_config.poll_interval_ms <= 0)
+        {
+            auto_detect_config.poll_interval_ms = 5000;
+        }
+    }
+
     for (pugi::xml_node path_node : pthreading.children("path"))
     {
         std::string path = path_node.attribute("path").as_string();
@@ -283,10 +305,84 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
     return !paths.empty();
 }
 
+static void process_batch_directory(const fs::path& batch_dir, const std::string& json0_jpg1, DetectFn fnDetect, int pid)
+{
+    if (!fs::exists(batch_dir) || !fs::is_directory(batch_dir))
+    {
+        std::cerr << "[batch directory missing] " << batch_dir.string() << std::endl;
+        return;
+    }
+
+    const fs::path checkpoint_path = checkpoint_path_for_target(batch_dir);
+    std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
+    std::vector<fs::path> pending_files = auto_detect::collect_batch_files(batch_dir, json0_jpg1);
+
+    for (const fs::path& file_path : pending_files)
+    {
+        const std::string file_path_str = file_path.string();
+        if (completed.find(file_path_str) != completed.end())
+        {
+            std::cout << "[resume skip] " << file_path_str << std::endl;
+            continue;
+        }
+
+        if (json0_jpg1 == "jpg")
+        {
+            test_one_jpg(file_path_str, fnDetect, pid);
+        }
+        else
+        {
+            test_one_json(file_path_str, fnDetect, pid);
+        }
+
+        completed.insert(file_path_str);
+        if (!save_checkpoint(checkpoint_path, completed))
+        {
+            std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
+        }
+    }
+}
+
+static void run_auto_detect_polling(const std::vector<std::string>& total_dirs,
+                                    const std::string& json0_jpg1,
+                                    DetectFn fnDetect,
+                                    int pid,
+                                    int poll_interval_ms)
+{
+    while (true)
+    {
+        for (const std::string& total_dir_str : total_dirs)
+        {
+            const fs::path total_dir(total_dir_str);
+            if (!fs::exists(total_dir) || !fs::is_directory(total_dir))
+            {
+                std::cerr << "[auto detect path missing] " << total_dir.string() << std::endl;
+                continue;
+            }
+
+            std::vector<fs::path> batch_dirs = auto_detect::find_today_batch_directories(total_dir);
+            if (batch_dirs.empty())
+            {
+                std::cout << "[auto detect] no today batch directories under " << total_dir.string() << std::endl;
+                continue;
+            }
+
+            for (const fs::path& batch_dir : batch_dirs)
+            {
+                std::cout << "[auto detect] batch directory " << batch_dir.string() << std::endl;
+                process_batch_directory(batch_dir, json0_jpg1, fnDetect, pid);
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(poll_interval_ms));
+    }
+}
+
 int main()
 {
     std::string json0_jpg1 = "jpg";
     int pid = 100;
+    AutoDetectConfig auto_detect_config;
 
     const fs::path executable_dir = get_executable_dir();
     if (executable_dir.empty())
@@ -313,13 +409,22 @@ int main()
 
     const fs::path project_xml_path = executable_dir / "config" / "project.xml";
     std::vector<std::string> project_paths;
-    if (read_project_paths_from_xml(project_xml_path, json0_jpg1, project_paths))
+    if (read_project_paths_from_xml(project_xml_path, json0_jpg1, project_paths, auto_detect_config))
     {
         std::cout << "test type is " << json0_jpg1 << " !!!" << std::endl;
         std::cout << "project.xml paths loaded from: " << project_xml_path << std::endl;
-        for (const std::string& path : project_paths)
+
+        if (auto_detect_config.enabled)
         {
-            process_input_path(path, json0_jpg1, fnDetect, pid);
+            std::cout << "auto detect enabled, poll interval = " << auto_detect_config.poll_interval_ms << " ms" << std::endl;
+            run_auto_detect_polling(project_paths, json0_jpg1, fnDetect, pid, auto_detect_config.poll_interval_ms);
+        }
+        else
+        {
+            for (const std::string& path : project_paths)
+            {
+                process_input_path(path, json0_jpg1, fnDetect, pid);
+            }
         }
 
         dlclose(handle);

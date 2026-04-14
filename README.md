@@ -266,9 +266,43 @@ cd release
 
 ### 运行逻辑
 
-- 如果 `config/project.xml` 中已经配置了 `<path>`，程序会自动按顺序处理这些路径
+- 如果 `config/project.xml` 中配置了 `<auto_detect enable="1" .../>`，程序会优先进入自动轮询模式
+- 自动轮询模式下，`path` 必须指向总目录，程序会自动查找当天批次目录并持续处理
+- 如果没有开启自动检测，但配置了 `<path>`，程序会按原来的路径顺序处理这些路径
 - 如果没有配置路径，程序会提示你手动输入路径
-- 当单个文件没有缺陷结果时，程序会输出 `flaws=0`，不会再打印空的 `outdata`
+
+### 自动检测模式
+
+当 `config/project.xml` 中启用自动检测后：
+
+```xml
+<auto_detect enable="1" poll_interval_ms="5000"/>
+```
+
+程序会进入持续轮询模式，并按以下规则工作：
+
+- `path` 指向总目录
+- 在总目录下查找当天日期前缀开头的批次目录，例如今天是 `20260411`，就匹配 `20260411*`
+- 如果同一天有多个批次目录，则按名称从小到大依次处理
+- 每个批次目录只扫描 `E1`、`E2`、`E3`、`E4`
+- 扫描会持续进行，直到程序退出
+- 已经处理过的文件会通过 checkpoint 自动跳过
+
+建议在“数据会持续采集”的场景下启用这个模式。
+
+一个典型配置示例如下：
+
+```xml
+<pthreading>
+    <path path="E:\0_project\proj2_20260411\data"/>
+    <auto_detect enable="1" poll_interval_ms="5000"/>
+</pthreading>
+```
+
+这里的 `data` 是总目录，不是某个 `20260411xxxxxx` 批次目录。
+程序会先找到今天的批次目录，再进入每个批次目录下的 `E1` 到 `E4` 继续处理。
+
+当单个文件没有缺陷结果时，程序会输出 `flaws=0`，不会再打印空的 `outdata`。
 
 ---
 
@@ -348,8 +382,25 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/aarch64-linux-gnu:$LD_LIBR
 
 ### 运行逻辑
 
-- 如果 `config/project.xml` 中已经配置了 `<path>`，程序会自动按顺序处理这些路径
+- 如果 `config/project.xml` 中配置了 `<auto_detect enable="1" .../>`，程序会优先进入自动轮询模式
+- 自动轮询模式下，`path` 必须指向总目录，程序会自动查找当天批次目录并持续处理
+- 如果没有开启自动检测，但配置了 `<path>`，程序会按原来的路径顺序处理这些路径
 - 如果没有配置路径，程序会提示你手动输入路径
+
+### Jetson 开机自启 / 崩溃自启
+
+如果你想让 `shell_jetson` 在 Jetson 上开机自动运行，或者崩溃后自动重启，建议用 `systemd` 管理服务。
+
+最简思路是：
+
+- 把 `shell_jetson`、`libproj2.so`、`config/` 放到同一个运行目录
+- 新建 `systemd` service
+- 配置 `Restart=always` 或 `Restart=on-failure`
+- 用 `systemctl enable --now` 开机自启
+
+详细步骤和可复制的 `service` 示例，请看：
+
+- `docs/superpowers/jetson_cmake.md`
 
 ---
 
@@ -377,10 +428,15 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/aarch64-linux-gnu:$LD_LIBR
 在 `config/project.xml` 中配置：
 
 ```xml
-<path path="E:\0_project\proj2_20260411\test_data"/>
+<pthreading>
+    <path path="E:\0_project\proj2_20260411\data"/>
+    <auto_detect enable="1" poll_interval_ms="5000"/>
+</pthreading>
 ```
 
 然后启动程序即可。
+
+如果开启了自动检测，程序会自动在 `data` 下查找当天批次目录并持续轮询；如果关闭自动检测，则仍然按原来的路径一次性处理。
 
 ### 示例 2：处理单个图片
 
@@ -401,6 +457,28 @@ E:\0_project\proj2_20260411\test_data\1.jpg
 ```
 
 程序会按顺序处理 `test_data_1` 和 `test_data_2`。
+
+如果启用了自动检测，并且这些路径都是总目录，那么程序会分别在每个总目录下查找当天批次目录并持续轮询。
+
+### 示例 4：自动检测的目录结构
+
+自动检测需要的数据目录形状如下：
+
+```text
+data/
+  20260411083000/
+    E1/
+    E2/
+    E3/
+    E4/
+  20260411120000/
+    E1/
+    E2/
+    E3/
+    E4/
+```
+
+程序会按目录名从早到晚顺序处理同一天的所有批次目录。
 
 ---
 
@@ -438,7 +516,17 @@ E:\0_project\proj2_20260411\test_data\1.jpg
 - 目标路径是否被改名或移动
 - 文件路径字符串是否变化
 
-### 5. Jetson 上运行失败但 Windows 正常
+### 5. 自动检测没有找到数据
+
+检查：
+
+- `path` 是否指向总目录，而不是某个 `E1`/`E2` 目录
+- 当天目录名是否真的以当天日期前缀开头，例如 `20260411*`
+- 批次目录下是否存在 `E1`、`E2`、`E3`、`E4`
+- `auto_detect enable="1"` 是否已开启
+- `poll_interval_ms` 是否过小或过大
+
+### 6. Jetson 上运行失败但 Windows 正常
 
 检查：
 
@@ -453,6 +541,8 @@ E:\0_project\proj2_20260411\test_data\1.jpg
 - `docs/superpowers/jetson_cmake.md`
 - `docs/superpowers/specs/2026-04-13-jetson-support-design.md`
 - `docs/superpowers/plans/2026-04-13-jetson-support-implementation.md`
+- `docs/superpowers/specs/2026-04-14-auto-detect-design.md`
+- `docs/superpowers/plans/2026-04-14-auto-detect-implementation.md`
 
 ---
 

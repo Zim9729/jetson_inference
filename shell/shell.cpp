@@ -20,7 +20,10 @@
 #include <codecvt> 
 #include <cctype>
 #include <string>
+#include <thread>
 #include <pugixml.hpp>
+
+#include "auto_detect.h"
 
 std::string m_sPID = "~";
 
@@ -240,9 +243,16 @@ void read_jpg_folders(std::string dir_path, std::string json0_jpg1, int iPID)
     }
 }
 
+struct AutoDetectConfig
+{
+    bool enabled = false;
+    int poll_interval_ms = 5000;
+};
+
 static bool read_project_paths_from_xml(const fs::path& project_xml_path,
                                         std::string& json0_jpg1,
-                                        std::vector<std::string>& paths)
+                                        std::vector<std::string>& paths,
+                                        AutoDetectConfig& auto_detect_config)
 {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(project_xml_path.string().c_str(), pugi::parse_default, pugi::encoding_utf8);
@@ -267,6 +277,17 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
             json0_jpg1 = "json";
     }
 
+    pugi::xml_node auto_detect = pthreading.child("auto_detect");
+    if (!auto_detect.empty())
+    {
+        auto_detect_config.enabled = auto_detect.attribute("enable").as_int(0) == 1;
+        auto_detect_config.poll_interval_ms = auto_detect.attribute("poll_interval_ms").as_int(5000);
+        if (auto_detect_config.poll_interval_ms <= 0)
+        {
+            auto_detect_config.poll_interval_ms = 5000;
+        }
+    }
+
     for (pugi::xml_node path_node : pthreading.children("path"))
     {
         std::string path = path_node.attribute("path").as_string();
@@ -275,6 +296,78 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
     }
 
     return !paths.empty();
+}
+
+static void process_batch_directory(const fs::path& batch_dir, const std::string& json0_jpg1, int iPID)
+{
+    if (!fs::exists(batch_dir) || !fs::is_directory(batch_dir))
+    {
+        std::cerr << "[batch directory missing] " << batch_dir.string() << std::endl;
+        return;
+    }
+
+    const fs::path checkpoint_path = checkpoint_path_for_target(batch_dir);
+    std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
+    std::vector<fs::path> pending_files = auto_detect::collect_batch_files(batch_dir, json0_jpg1);
+
+    for (const fs::path& file_path : pending_files)
+    {
+        const std::string file_path_str = file_path.string();
+        if (completed.find(file_path_str) != completed.end())
+        {
+            std::cout << "[resume skip] " << file_path_str << std::endl;
+            continue;
+        }
+
+        if (json0_jpg1 == "jpg")
+        {
+            test_one_jpg(file_path_str, iPID);
+        }
+        else
+        {
+            test_one_json(file_path_str, iPID);
+        }
+
+        completed.insert(file_path_str);
+        if (!save_checkpoint(checkpoint_path, completed))
+        {
+            std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
+        }
+    }
+}
+
+static void run_auto_detect_polling(const std::vector<std::string>& total_dirs,
+                                    const std::string& json0_jpg1,
+                                    int iPID,
+                                    int poll_interval_ms)
+{
+    while (true)
+    {
+        for (const std::string& total_dir_str : total_dirs)
+        {
+            const fs::path total_dir(total_dir_str);
+            if (!fs::exists(total_dir) || !fs::is_directory(total_dir))
+            {
+                std::cerr << "[auto detect path missing] " << total_dir.string() << std::endl;
+                continue;
+            }
+
+            std::vector<fs::path> batch_dirs = auto_detect::find_today_batch_directories(total_dir);
+            if (batch_dirs.empty())
+            {
+                std::cout << "[auto detect] no today batch directories under " << total_dir.string() << std::endl;
+                continue;
+            }
+
+            for (const fs::path& batch_dir : batch_dirs)
+            {
+                std::cout << "[auto detect] batch directory " << batch_dir.string() << std::endl;
+                process_batch_directory(batch_dir, json0_jpg1, iPID);
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(poll_interval_ms));
+    }
 }
 
 static void process_input_path(const std::string& sInpath, const std::string& json0_jpg1, int iPID)
@@ -333,13 +426,16 @@ int main(int argc, char **argv)
 {
     std::string json0_jpg1 = "jpg"; // json or jpg
     int iPID = 100;
+    AutoDetectConfig auto_detect_config;
     m_sPID = "[PID" + std::to_string(iPID) + "]";
     std::cout << "test type is jpg !!!" << std::endl;
+
     char FilePath[255];
     GetModuleFileName(NULL, FilePath, 255);
     (strrchr(FilePath, '\\'))[1] = 0;
     std::string sexeFilePath = FilePath;
     fs::path projectXmlPath = fs::path(sexeFilePath) / "config" / "project.xml";
+
     std::string sDllPath = sexeFilePath + "proj2.dll";
     HINSTANCE hDll = LoadLibrary(sDllPath.c_str());
     if (hDll == NULL)
@@ -357,13 +453,22 @@ int main(int argc, char **argv)
     }
 
     std::vector<std::string> project_paths;
-    if (read_project_paths_from_xml(projectXmlPath, json0_jpg1, project_paths))
+    if (read_project_paths_from_xml(projectXmlPath, json0_jpg1, project_paths, auto_detect_config))
     {
         std::cout << "test type is " << json0_jpg1 << " !!!" << std::endl;
         std::cout << "project.xml paths loaded from: " << projectXmlPath.string() << std::endl;
-        for (const std::string& path : project_paths)
+
+        if (auto_detect_config.enabled)
         {
-            process_input_path(path, json0_jpg1, iPID);
+            std::cout << "auto detect enabled, poll interval = " << auto_detect_config.poll_interval_ms << " ms" << std::endl;
+            run_auto_detect_polling(project_paths, json0_jpg1, iPID, auto_detect_config.poll_interval_ms);
+        }
+        else
+        {
+            for (const std::string& path : project_paths)
+            {
+                process_input_path(path, json0_jpg1, iPID);
+            }
         }
 
         std::cerr <<  "\n\n************** proj2.dll finish ***********" << std::endl;;
