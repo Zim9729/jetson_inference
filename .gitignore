@@ -43,3 +43,4 @@ __pycache__/
 public/
 *.onnx
 *.engine
+data/*
