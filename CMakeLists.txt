@@ -47,6 +47,7 @@ set(PROJ2_SOURCES
     "${PROJECT_ROOT}/proj2/koujian.cpp"
     "${PROJECT_ROOT}/proj2/mycommon.cpp"
     "${PROJECT_ROOT}/proj2/proj2.cpp"
+    "${PROJECT_ROOT}/proj2/perf_profiler.cpp"
     "${PROJECT_ROOT}/proj2/tensorrt.cpp"
     "${PROJECT_ROOT}/proj2/yolov5Trt.cpp"
 )
@@ -86,6 +87,24 @@ target_include_directories(batch_summary_tests
 )
 
 add_test(NAME batch_summary_tests COMMAND batch_summary_tests)
+
+add_executable(perf_profiler_tests
+    "${PROJECT_ROOT}/tests/perf_profiler_test.cpp"
+    "${PROJECT_ROOT}/proj2/perf_profiler.cpp"
+)
+
+target_include_directories(perf_profiler_tests
+    PRIVATE
+        "${PROJECT_ROOT}/proj2"
+        "${PUGIXML_DIR}"
+)
+
+target_link_libraries(perf_profiler_tests
+    PRIVATE
+        pugixml_vendor
+)
+
+add_test(NAME perf_profiler_tests COMMAND perf_profiler_tests)
 
 if(WIN32)
     set(OPENCV_INCLUDE_DIR "${PUBLIC_DIR}/OpenCV4.6.0/include")
