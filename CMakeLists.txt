@@ -227,6 +227,11 @@ if(WIN32)
             DC_EXPORTS
     )
 
+    target_compile_options(proj2
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    )
+
     set(PROJ2_PRIVATE_LINK_DIRS
         "${OPENCV_LIB_DIR}"
         "${CUDA_LIB_DIR}"

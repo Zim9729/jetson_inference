@@ -7,6 +7,7 @@
 #include "myxml.h"
 #include "myjson.h"
 #include "mylog.h"
+#include "perf_profiler.h"
 #include <mutex>
 #include <random>
 
@@ -145,6 +146,7 @@ int Cdetect::initrt()
         m_ini_state = -1;
         return -1;
     }
+    perf::configure_from_project_xml(projectXml_path, runtime_root);
     istate = cxml.read_project_xml(projectXml_path,sInproject);
     if(istate != 1 || sInproject.length()<3) {
         ShowLog(ERROR_1, _T("#####ERROR: xml not exists: "), projectXml_path, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
@@ -864,7 +866,15 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
 
     //结果图片保存
     if (m_config_param.saveResult_img >= 1 || m_config_param.saveResult2txt >= 1)
+    {
+        const auto perf_save_image_start = std::chrono::steady_clock::now();
         save_result_img(param.img, param.jpgpath, param.jpgname, istate, vOutflaws);
+        const auto perf_save_image_end = std::chrono::steady_clock::now();
+        perf::record_event("stage", "detect", "save_result_image",
+            std::chrono::duration_cast<std::chrono::milliseconds>(perf_save_image_end - perf_save_image_start).count(),
+            istate,
+            static_cast<int>(vOutflaws.size()));
+    }
 
     //输出；
     if ((int)vOutflaws.size() > 0)
@@ -924,10 +934,18 @@ int Cdetect::in_process(char* file_Data, std::string& OutData,std::string& sOutJ
         ShowLog(INFO_3, _T("#####ERROR: jpg open failed: "), param.jpgpath, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
         return -1;
     }
+    perf::set_image_context(param.jpgpath, m_iPID);
 
     //step2: 读取图片内容
     //auto start00 = std::chrono::high_resolution_clock::now();
-    cv::Mat image = cv::imread(param.jpgpath.c_str(), 1);
+    cv::Mat image;
+    {
+        const auto perf_read_start = std::chrono::steady_clock::now();
+        image = cv::imread(param.jpgpath.c_str(), 1);
+        const auto perf_read_end = std::chrono::steady_clock::now();
+        perf::record_event("stage", "detect", "read_image",
+            std::chrono::duration_cast<std::chrono::milliseconds>(perf_read_end - perf_read_start).count());
+    }
     param.img = image;
     param.iw = m_config_param.imgInsize.width;
     param.ih = m_config_param.imgInsize.height;
@@ -979,21 +997,30 @@ int Cdetect::in_process(char* file_Data, std::string& OutData,std::string& sOutJ
     {
         *iOutflawsize = int(vResults.size()); //输出缺陷个数
         std::string Out_json_path = m_result_json + "/" + m_lastPart + "_result.json";
-        int istate_json = m_objj.write_defects_json(m_sPID, 
-            file_Data, 
-            OutData, 
-            Out_json_path,
-            state, 
-            vResults, 
-            param.img.cols,
-            param.img.rows,
-            m_out_count_koujian, 
-            m_out_scaling, 
-            m_out_physical, 
-            m_pic_mileage,
-            m_pic_up_mileage,
-            m_pic_down_mileage,
-            m_config_param.saveResult_json);
+        int istate_json = -1;
+        {
+            const auto perf_save_json_start = std::chrono::steady_clock::now();
+            istate_json = m_objj.write_defects_json(m_sPID,
+                file_Data,
+                OutData,
+                Out_json_path,
+                state,
+                vResults,
+                param.img.cols,
+                param.img.rows,
+                m_out_count_koujian,
+                m_out_scaling,
+                m_out_physical,
+                m_pic_mileage,
+                m_pic_up_mileage,
+                m_pic_down_mileage,
+                m_config_param.saveResult_json);
+            const auto perf_save_json_end = std::chrono::steady_clock::now();
+            perf::record_event("stage", "detect", "save_json",
+                std::chrono::duration_cast<std::chrono::milliseconds>(perf_save_json_end - perf_save_json_start).count(),
+                state,
+                static_cast<int>(vResults.size()));
+        }
 
         if (istate_json != 1)
             ShowLog(ERROR_1, _T("#####ERROR: write json is wrong!!   "), param.jpgpath, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
