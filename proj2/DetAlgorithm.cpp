@@ -1,6 +1,7 @@
 #include "DetAlgorithm.h"
 #include "detect.h"
 #include "mylog.h"
+#include "perf_profiler.h"
 
 #include <memory>
 
@@ -52,6 +53,31 @@ extern "C" PROJ2_API void append_task_log_text(const char* rawText)
 }
 #endif
 
+extern "C" PROJ2_API void configure_perf_profile(const char* projectXmlPath, const char* runtimeRoot)
+{
+    if (projectXmlPath == nullptr || runtimeRoot == nullptr)
+    {
+        perf::configure_disabled();
+        return;
+    }
+
+    perf::configure_from_project_xml(projectXmlPath, runtimeRoot);
+}
+
+extern "C" PROJ2_API void record_perf_file_total(const char* imagePath,
+                                                 int threadId,
+                                                 long long durationMs,
+                                                 int state,
+                                                 int flaws)
+{
+    if (imagePath == nullptr)
+    {
+        return;
+    }
+
+    perf::record_file_total(imagePath, threadId, durationMs, state, flaws);
+}
+
 thread_local std::unique_ptr<Cdetect> m_MainProcess;
 thread_local char outdata[1024] = { '\0' };
 
@@ -77,6 +103,8 @@ char* detect_process(char* file_Data, int* det_state, int* iPID)
         *det_state = -2;
         return nullptr;
     }
+
+    perf::ScopedTimer detect_timer("stage", "detect", "detect_process_total");
 
     if (!m_MainProcess)
     {

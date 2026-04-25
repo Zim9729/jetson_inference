@@ -24,6 +24,8 @@ using DetectFn = char* (*)(char* file_Data, int* det_state, int* iPID);
 using BeginTaskLogCaptureFn = void (*)();
 using TakeTaskLogCaptureFn = const char* (*)();
 using AppendTaskLogTextFn = void (*)(const char*);
+using ConfigurePerfProfileFn = void (*)(const char*, const char*);
+using RecordPerfFileTotalFn = void (*)(const char*, int, long long, int, int);
 namespace fs = std::filesystem;
 
 struct ThreadConfig
@@ -43,6 +45,8 @@ static fs::path g_executable_dir;
 static BeginTaskLogCaptureFn fnBeginTaskLogCapture = nullptr;
 static TakeTaskLogCaptureFn fnTakeTaskLogCapture = nullptr;
 static AppendTaskLogTextFn fnAppendTaskLogText = nullptr;
+static ConfigurePerfProfileFn fnConfigurePerfProfile = nullptr;
+static RecordPerfFileTotalFn fnRecordPerfFileTotal = nullptr;
 
 static fs::path get_executable_dir()
 {
@@ -184,6 +188,11 @@ static FileProcessResult process_one_jpg_file(const std::string& path, DetectFn 
     char* outData = fnDetect(payload.data(), &det_state, &pid);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    const int flaws = (det_state == 1 && outData != nullptr) ? 1 : 0;
+    if (fnRecordPerfFileTotal != nullptr)
+    {
+        fnRecordPerfFileTotal(path.c_str(), pid, duration.count(), det_state, flaws);
+    }
     if (capture_enabled)
     {
         const char* captured = fnTakeTaskLogCapture();
@@ -234,6 +243,11 @@ static FileProcessResult process_one_json_file(const std::string& path, DetectFn
     char* outData = fnDetect(payload.data(), &det_state, &pid);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    const int flaws = (det_state == 1 && outData != nullptr) ? 1 : 0;
+    if (fnRecordPerfFileTotal != nullptr)
+    {
+        fnRecordPerfFileTotal(path.c_str(), pid, duration.count(), det_state, flaws);
+    }
     if (capture_enabled)
     {
         const char* captured = fnTakeTaskLogCapture();
@@ -614,8 +628,15 @@ int main()
     fnBeginTaskLogCapture = reinterpret_cast<BeginTaskLogCaptureFn>(dlsym(handle, "begin_task_log_capture"));
     fnTakeTaskLogCapture = reinterpret_cast<TakeTaskLogCaptureFn>(dlsym(handle, "take_task_log_capture"));
     fnAppendTaskLogText = reinterpret_cast<AppendTaskLogTextFn>(dlsym(handle, "append_task_log_text"));
+    fnConfigurePerfProfile = reinterpret_cast<ConfigurePerfProfileFn>(dlsym(handle, "configure_perf_profile"));
+    fnRecordPerfFileTotal = reinterpret_cast<RecordPerfFileTotalFn>(dlsym(handle, "record_perf_file_total"));
 
     const fs::path project_xml_path = executable_dir / "config" / "project.xml";
+    if (fnConfigurePerfProfile != nullptr)
+    {
+        fnConfigurePerfProfile(project_xml_path.string().c_str(), executable_dir.string().c_str());
+    }
+
     std::vector<std::string> project_paths;
     if (read_project_paths_from_xml(project_xml_path, json0_jpg1, project_paths, thread_config, auto_detect_config))
     {

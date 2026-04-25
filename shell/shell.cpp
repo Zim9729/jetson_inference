@@ -33,11 +33,15 @@ typedef char*(__cdecl* funDetect)(char* file_Data, int* det_state, int* iPID);
 using BeginTaskLogCaptureFn = void(__cdecl*)();
 using TakeTaskLogCaptureFn = const wchar_t* (__cdecl*)();
 using AppendTaskLogTextFn = void(__cdecl*)(const wchar_t*);
+using ConfigurePerfProfileFn = void(__cdecl*)(const char*, const char*);
+using RecordPerfFileTotalFn = void(__cdecl*)(const char*, int, long long, int, int);
 funDetect fnDetect;
 funDetect fnDetect1;
 BeginTaskLogCaptureFn fnBeginTaskLogCapture = nullptr;
 TakeTaskLogCaptureFn fnTakeTaskLogCapture = nullptr;
 AppendTaskLogTextFn fnAppendTaskLogText = nullptr;
+ConfigurePerfProfileFn fnConfigurePerfProfile = nullptr;
+RecordPerfFileTotalFn fnRecordPerfFileTotal = nullptr;
 
 namespace fs = std::filesystem;
 
@@ -222,6 +226,11 @@ static FileProcessResult process_one_jpg_file(const std::string& sInpath, int iP
     char* outData = fnDetect(inData, &det_state, &iPID);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    const int flaws = (det_state == 1 && outData != nullptr) ? 1 : 0;
+    if (fnRecordPerfFileTotal != nullptr)
+    {
+        fnRecordPerfFileTotal(sInpath.c_str(), iPID, duration.count(), det_state, flaws);
+    }
     if (capture_enabled)
     {
         const wchar_t* captured = fnTakeTaskLogCapture();
@@ -275,6 +284,11 @@ static FileProcessResult process_one_json_file(const std::string& sInpath, int i
     char* outData = fnDetect(inData, &det_state, &iPID);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    const int flaws = (det_state == 1 && outData != nullptr) ? 1 : 0;
+    if (fnRecordPerfFileTotal != nullptr)
+    {
+        fnRecordPerfFileTotal(sInpath.c_str(), iPID, duration.count(), det_state, flaws);
+    }
     if (capture_enabled)
     {
         const wchar_t* captured = fnTakeTaskLogCapture();
@@ -672,6 +686,13 @@ int main(int argc, char **argv)
     fnBeginTaskLogCapture = reinterpret_cast<BeginTaskLogCaptureFn>(GetProcAddress(hDll, "begin_task_log_capture"));
     fnTakeTaskLogCapture = reinterpret_cast<TakeTaskLogCaptureFn>(GetProcAddress(hDll, "take_task_log_capture"));
     fnAppendTaskLogText = reinterpret_cast<AppendTaskLogTextFn>(GetProcAddress(hDll, "append_task_log_text"));
+    fnConfigurePerfProfile = reinterpret_cast<ConfigurePerfProfileFn>(GetProcAddress(hDll, "configure_perf_profile"));
+    fnRecordPerfFileTotal = reinterpret_cast<RecordPerfFileTotalFn>(GetProcAddress(hDll, "record_perf_file_total"));
+
+    if (fnConfigurePerfProfile != nullptr)
+    {
+        fnConfigurePerfProfile(projectXmlPath.string().c_str(), g_executable_dir.string().c_str());
+    }
 
     std::vector<std::string> project_paths;
 
