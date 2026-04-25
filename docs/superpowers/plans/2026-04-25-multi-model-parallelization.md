@@ -277,19 +277,23 @@ Write-Host "基线: 320.71ms；最新两次重跑: 227.43ms；提升约 29.1%"
 - 重跑 2：`227.43ms`
 - 结论：较基线下降约 `29.1%`，但仍未达到阶段 1 设计目标中的 `180ms`
 
-- [ ] **Step 5: 验证结果正确性**
+- [x] **Step 5: 验证结果正确性**
 
 检查生成的 JSON 结果与基线是否一致：
 - 缺陷数量是否相同
 - 缺陷位置是否相同
 - 置信度是否相同
 
-- [ ] **Step 6: Commit 测试记录**
+实际验证：同名 `*_result.json` 的缺陷数量与位置签名一致，重复跑结果稳定。
+
+- [x] **Step 6: Commit 测试记录**
 
 ```bash
 git add -A
 git commit -m "test: verify parallel inference performance and correctness"
 ```
+
+实际结果：测试记录已随提交 `95c4ef3` 归档。
 
 ---
 
