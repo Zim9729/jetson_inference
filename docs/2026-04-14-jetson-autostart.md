@@ -30,6 +30,8 @@ description: Jetson shell_jetson 开机自启与崩溃自启
 - `config/project.xml` 必须位于 `config/` 目录下
 - `project.xml` 里的 `path` 要指向实际数据目录
 - 如果你启用了自动检测，`auto_detect enable="1"` 也要配好
+- 如果 `path` 指向的是网络共享挂载点，建议先保证挂载点可访问，再启动 `shell_jetson`
+- 如果共享目录使用的是 `x-systemd.automount`，**不要**再用 `RequiresMountsFor=` 硬等挂载，否则开机时共享还没 ready 可能直接触发依赖失败
 
 ## 第 1 步：创建 `systemd` 服务文件
 
@@ -44,7 +46,8 @@ sudo nano /etc/systemd/system/proj2-shell.service
 ```ini
 [Unit]
 Description=proj2 shell_jetson
-After=network.target
+After=network-online.target remote-fs.target
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -65,6 +68,12 @@ WantedBy=multi-user.target
   - 必须指向 `libproj2.so`、`shell_jetson`、`config/` 所在目录
 - `ExecStart`
   - 建议写绝对路径
+- `After=network-online.target remote-fs.target`
+  - 确保网络和远程挂载尽量先准备好，再启动程序
+- `x-systemd.automount`
+  - 建议放在 `/etc/fstab` 的共享挂载项里，让共享在第一次访问时自动挂载
+- `RequiresMountsFor=/mnt/windows_share`
+  - **只适合真正稳定、启动时一定可用的挂载点**；如果是 Windows 共享，通常建议去掉，交给 automount 和程序重试处理
 - `Restart=always`
   - 程序退出后持续重启
 - `RestartSec=5`
@@ -117,7 +126,9 @@ sudo journalctl -u proj2-shell.service -f
 sudo tee /etc/systemd/system/proj2-shell.service >/dev/null <<'EOF'
 [Unit]
 Description=proj2 shell_jetson
-After=network.target
+After=network-online.target remote-fs.target
+Wants=network-online.target
+RequiresMountsFor=/mnt/windows_share
 
 [Service]
 Type=simple
@@ -181,11 +192,21 @@ sudo journalctl -u proj2-shell.service -f
 
 如果 `shell_jetson` 同时启用了自动检测，那么自启后它会自动扫描 `path` 对应目录下当天的批次数据。
 
-推荐把程序、共享挂载和 `project.xml` 一起配好，这样 Jetson 开机后可以自动完成：
+推荐把程序、共享挂载和 `project.xml` 一起配好，并确保**先挂载、再启动 `shell_jetson`**，这样 Jetson 开机后可以自动完成：
 
 1. 挂载 Windows 共享
 2. 启动 `shell_jetson`
 3. 自动扫描当天目录
+
+如果你遇到“刚开机时路径不存在、稍后重启程序又恢复”的情况，通常就是共享挂载还没完成。此时优先检查：
+
+- `/etc/fstab` 里是否配置了 `x-systemd.automount`
+- 挂载点是否使用了 `_netdev`、`nofail`、`x-systemd.requires=network-online.target`
+- `proj2-shell.service` 是否只保留了 `After=network-online.target remote-fs.target`，而没有再硬等 `RequiresMountsFor=`
+
+如果你希望更稳，建议在 `fstab` 里同时保留 `x-systemd.automount`，这样网络共享即使开机时还没完全就绪，也会在第一次访问时自动挂载。
+
+对于这种共享挂载场景，建议把 `proj2-shell.service` 里的 `RequiresMountsFor=` 去掉，只保留 `After=network-online.target remote-fs.target`，让 `shell_jetson` 自己在自动检测循环里等待路径可用。
 
 ## 相关文档
 

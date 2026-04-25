@@ -149,7 +149,7 @@ mount | grep windows_share
 ```xml
 <pthreading>
     <path path="/mnt/windows_share"/>
-    <auto_detect enable="1" poll_interval_ms="5000"/>
+    <auto_detect enable="1" poll_interval_ms="5000" run_date="20260411"/>
 </pthreading>
 ```
 

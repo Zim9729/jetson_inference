@@ -267,7 +267,9 @@ cd release
 ### 运行逻辑
 
 - 如果 `config/project.xml` 中配置了 `<auto_detect enable="1" .../>`，程序会优先进入自动轮询模式
-- 自动轮询模式下，`path` 必须指向总目录，程序会自动查找当天批次目录并持续处理
+- 自动轮询模式下，`path` 必须指向总目录，程序会自动查找指定日期前缀的批次目录并持续处理
+- 如果 `auto_detect` 中配置了 `run_date="YYYYMMDD"`，程序会优先按这个日期前缀查找批次目录
+- 如果没有配置 `run_date`，或者 `run_date` 格式不合法，程序会给出警告并回退到当天
 - 如果没有开启自动检测，但配置了 `<path>`，程序会按原来的路径顺序处理这些路径
 - 如果没有配置路径，程序会提示你手动输入路径
 
@@ -276,13 +278,13 @@ cd release
 当 `config/project.xml` 中启用自动检测后：
 
 ```xml
-<auto_detect enable="1" poll_interval_ms="5000"/>
+<auto_detect enable="1" poll_interval_ms="5000" run_date="20260411"/>
 ```
 
 程序会进入持续轮询模式，并按以下规则工作：
 
 - `path` 指向总目录
-- 在总目录下查找当天日期前缀开头的批次目录，例如今天是 `20260411`，就匹配 `20260411*`
+- 在总目录下查找 `run_date` 对应日期前缀开头的批次目录，例如 `run_date="20260411"` 就匹配 `20260411*`
 - 如果同一天有多个批次目录，则按名称从小到大依次处理
 - 每个批次目录只扫描 `E1`、`E2`、`E3`、`E4`
 - 扫描会持续进行，直到程序退出
@@ -295,12 +297,12 @@ cd release
 ```xml
 <pthreading>
     <path path="E:\0_project\proj2_20260411\data"/>
-    <auto_detect enable="1" poll_interval_ms="5000"/>
+    <auto_detect enable="1" poll_interval_ms="5000" run_date="20260411"/>
 </pthreading>
 ```
 
 这里的 `data` 是总目录，不是某个 `20260411xxxxxx` 批次目录。
-程序会先找到今天的批次目录，再进入每个批次目录下的 `E1` 到 `E4` 继续处理。
+程序会先找到 `run_date` 指定日期的批次目录，再进入每个批次目录下的 `E1` 到 `E4` 继续处理。
 
 当单个文件没有缺陷结果时，程序会输出 `flaws=0`，不会再打印空的 `outdata`。
 

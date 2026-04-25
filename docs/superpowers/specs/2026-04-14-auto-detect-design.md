@@ -54,7 +54,7 @@ Suggested shape:
 ```xml
 <pthreading>
     <path path="E:\0_project\proj2_20260411\data"/>
-    <auto_detect enable="1" poll_interval_ms="5000"/>
+    <auto_detect enable="1" poll_interval_ms="5000" run_date="20260411"/>
 </pthreading>
 ```
 
@@ -69,6 +69,10 @@ Suggested shape:
 - `auto_detect.poll_interval_ms`
   - polling interval in milliseconds
   - user-configurable
+- `auto_detect.run_date`
+  - optional date prefix in `YYYYMMDD` format
+  - when omitted, the application uses today’s date
+  - when invalid, the application warns and falls back to today
 
 ### Compatibility rule
 
@@ -79,9 +83,9 @@ If `auto_detect` is missing, the application should preserve the existing behavi
 When automatic detection is enabled:
 
 1. Resolve the configured total directory from `path`.
-2. Build today’s date prefix using local system date in `YYYYMMDD` format.
+2. Read `auto_detect.run_date` if present and valid; otherwise build today’s date prefix using local system date in `YYYYMMDD` format.
 3. Enumerate direct child directories of the total directory.
-4. Select every child directory whose name starts with today’s prefix.
+4. Select every child directory whose name starts with the effective date prefix.
 5. Sort the matching directories by name in ascending order.
 6. Process each matching batch directory in order.
 7. Repeat the scan on the next polling cycle so new data keeps getting picked up.

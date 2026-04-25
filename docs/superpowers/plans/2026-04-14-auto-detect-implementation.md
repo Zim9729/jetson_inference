@@ -47,16 +47,19 @@ This plan keeps the implementation small and safe:
 
 - [ ] **Step 1: Extend the config shape**
 
-Add an `auto_detect` node under `pthreading` with two attributes:
+Add an `auto_detect` node under `pthreading` with the following attributes:
 
 - `enable="1"` or `enable="0"`
 - `poll_interval_ms="5000"` or another user-chosen interval
+- `run_date="YYYYMMDD"` to select a specific batch date, or leave it empty to use today
 
 Keep the existing `path` node as the total directory.
 
 - [ ] **Step 2: Preserve backward compatibility**
 
 Make sure the XML stays readable if `auto_detect` is absent, so the current manual behavior still works for old configs.
+
+If `run_date` is present but invalid, the runtime should warn and fall back to today instead of failing hard.
 
 - [ ] **Step 3: Save the config change**
 
@@ -74,6 +77,7 @@ Commit the updated XML after confirming the new attributes sit beside the curren
 Define helper functions that both shells can call for the same behavior:
 
 - build today’s `YYYYMMDD` prefix
+- validate an optional `run_date` string and reject invalid values
 - find all direct child directories whose names start with that prefix
 - sort the matching directories by name ascending
 - enumerate `E1`, `E2`, `E3`, and `E4` inside a batch directory
