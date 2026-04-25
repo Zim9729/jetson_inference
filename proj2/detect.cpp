@@ -1,6 +1,7 @@
 #include "detect.h"
 #include <algorithm>
 #include <chrono>
+#include <future>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -793,15 +794,25 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         cvtColor(img,img,cv::COLOR_GRAY2BGR);
 
     std::string imgname = param.jpgname;
-    std::vector<std::pair<cv::Vec6f,nodeInfo>>areas;
-    if(area_obj != nullptr && istate_area == 1) {
-        area_obj->process(img.clone(), areas, &imgname);
-    }
-    std::vector<std::pair<cv::Vec6f, nodeInfo>>areas_koujian(areas);
+    std::vector<std::pair<cv::Vec6f,nodeInfo>>areas_area0;
+    std::vector<std::pair<cv::Vec6f,nodeInfo>>areas_area1;
+    auto future_area0 = std::async(std::launch::async, [&]() {
+        if(area_obj != nullptr && istate_area == 1) {
+            area_obj->process(img.clone(), areas_area0, &imgname);
+        }
+    });
+    auto future_area1 = std::async(std::launch::async, [&]() {
+        if(area_obj1 != nullptr && istate_area1 == 1) {
+            area_obj1->process(img.clone(), areas_area1, &imgname);
+        }
+    });
 
-    if(area_obj1 != nullptr && istate_area1 == 1) {
-        area_obj1->process(img.clone(), areas, &imgname);
-    }
+    future_area0.get();
+    std::vector<std::pair<cv::Vec6f, nodeInfo>>areas_koujian(areas_area0);
+    future_area1.get();
+
+    std::vector<std::pair<cv::Vec6f,nodeInfo>>areas = areas_area0;
+    areas.insert(areas.end(), areas_area1.begin(), areas_area1.end());
 
     int istate_daocha = 0;//是否为道岔
     judgedaocha_by_railcount(areas, istate_daocha); 
@@ -814,30 +825,53 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
 
     //koujian
     std::vector<flawOutInfo>vkoujian_flaws;
+    std::vector<flawOutInfo>vkoujian_flaws_detail0;
+    std::vector<flawOutInfo>vkoujian_flaws_detail1;
+    std::vector<std::vector<flawOutInfo>>velement_flaws(MAX_DETECT_NUM);
+    std::vector<std::future<void>> futures;
+    futures.reserve(2 + MAX_DETECT_NUM);
+
     if(koujian_obj != nullptr && istate_koujian == 1) {
-        std::vector<flawOutInfo>vtmps;
-        koujian_obj->process(img, areas, vtmps, &imgname);
-        vkoujian_flaws.insert(vkoujian_flaws.end(),vtmps.begin(),vtmps.end());
+        futures.emplace_back(std::async(std::launch::async, [&]() {
+            std::vector<flawOutInfo>vtmps;
+            koujian_obj->process(img, areas, vtmps, &imgname);
+            vkoujian_flaws_detail0 = std::move(vtmps);
+        }));
     }
     if(koujian_obj1 != nullptr && istate_koujian1 == 1) {
-        std::vector<flawOutInfo>vtmps;
-        koujian_obj1->process(img, areas, vtmps, &imgname);
-        vkoujian_flaws.insert(vkoujian_flaws.end(),vtmps.begin(),vtmps.end());
+        futures.emplace_back(std::async(std::launch::async, [&]() {
+            std::vector<flawOutInfo>vtmps;
+            koujian_obj1->process(img, areas, vtmps, &imgname);
+            vkoujian_flaws_detail1 = std::move(vtmps);
+        }));
     }
+    for(int i=0;i<MAX_DETECT_NUM;i++)
+    {
+        if(element_objs[i] != nullptr && istate_elements[i] == 1) {
+            futures.emplace_back(std::async(std::launch::async, [&, i]() {
+                std::vector<flawOutInfo>vtmps;
+                element_objs[i]->process(img, areas, vtmps, &imgname);
+                velement_flaws[i] = std::move(vtmps);
+            }));
+        }
+    }
+
+    for(auto& future : futures) {
+        future.get();
+    }
+
+    vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail0.begin(), vkoujian_flaws_detail0.end());
+    vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail1.begin(), vkoujian_flaws_detail1.end());
     if(m_xlbh_2koujian.combine_2koujian == 1) //扣件连缺失
         change_lianxu_koujian_node(img.cols,img.rows, vkoujian_flaws);
 
     if ((int)vkoujian_flaws.size()>0)
         vflaws.insert(vflaws.end(), vkoujian_flaws.begin(), vkoujian_flaws.end());
 
-
     for(int i=0;i<MAX_DETECT_NUM;i++)
     {
-        if(element_objs[i] != nullptr && istate_elements[i] == 1) {
-            std::vector<flawOutInfo>vtmps;
-            element_objs[i]->process(img, areas, vtmps, &imgname);
-            vflaws.insert(vflaws.end(),vtmps.begin(),vtmps.end());
-        }
+        if ((int)velement_flaws[i].size() > 0)
+            vflaws.insert(vflaws.end(), velement_flaws[i].begin(), velement_flaws[i].end());
     }
     if ((int)vflaws.size() > 20)
         vflaws.clear(); //缺陷结果有问题，直接清空数据
