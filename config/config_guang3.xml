@@ -9,7 +9,7 @@
 	<debugFolder debugFolder=""/> 		   <!-- 保存调试结果的文件夹全路径:“”不保存 -->
 	<!--*******区域1*******-->
     <area0 name="0_region1"> 
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 	 	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
 		<trtInfo version="5">		  							
@@ -31,7 +31,7 @@
 	</area0>
 	<!--*******区域2*******-->
     <area1 name="1_region2"> 
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
 		<trtInfo version="5">	
@@ -47,7 +47,7 @@
 	</area1>
 	<!--*******区域1细节1*******-->
 	<detail0 name="2_detail1">
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  											
 		<cut Cnt="0" overlap="0"/>    	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 
 		<limitArea state="1" left="0" right="4096" top="20" bottom="2028"/>	 <!-- state:0不限制缺陷区域，1限制区域；--> 			
@@ -102,7 +102,7 @@
 	</detail1>
 	<!--*******钢轨面缺陷*******-->
 	<element0 name="4_rail"> 
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="2" overlap="100"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 
 		<trtInfo version="5">
@@ -160,7 +160,7 @@
 	</element1>
 	<!--*******道床裂缝\道床积水*******-->
     <element2 name="2_dcqx"> 
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 			
 		<trtInfo version="10">
