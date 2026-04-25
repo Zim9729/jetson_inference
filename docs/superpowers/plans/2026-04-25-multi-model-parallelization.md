@@ -11,9 +11,10 @@
 **Spec Reference:** @e:\0_project\proj2_20260411\docs\superpowers\specs\2026-04-25-full-gpu-inference-design.md
 
 **实际执行状态:**
-- Stage 1/2 并行化: ✅ 已完成（直接在 `detect.cpp` 内实现）
-- Windows 构建与测试: ✅ 已完成
-- 性能对比: ✅ 已完成，但当前 `detect_process_total` 与基线基本持平
+- Stage 1/2 并行化: ✅ 已完成（直接在 `detect.cpp` 内实现，未单独创建 `thread_pool.h`）
+- Windows 构建与测试: ✅ 已完成（`cmake --build build --config Release --target proj2`、`ctest --test-dir build -C Release --output-on-failure`）
+- 性能对比: ✅ 已完成，最新两次重跑 `detect_process_total` 平均均为 `227.43ms`，相对基线 `320.71ms` 下降约 `29.1%`
+- 运行日志: ✅ 已确认 `shell_retest.out.txt` 中自动检测轮询、断点续跑与 `flaws=0` 输出正常
 - Jetson 验证: ⏳ 待执行
 
 ---
@@ -22,9 +23,9 @@
 
 | 文件 | 职责 | 操作 |
 |------|------|------|
-| `proj2/thread_pool.h` | 简单的并行执行工具函数 | 新建 |
-| `proj2/detect.cpp` | 修改 `detect_process()` 实现并行逻辑 | 修改 783-879行 |
-| `proj2/detect.h` | 可能需要的辅助结构体前向声明 | 查看确认 |
+| `proj2/thread_pool.h` | 简单的并行执行工具函数 | 计划项已取消，未创建 |
+| `proj2/detect.cpp` | 修改 `detect_process()` 实现并行逻辑 | 已修改（最终直接内联 `std::async`） |
+| `proj2/detect.h` | 可能需要的辅助结构体前向声明 | 已查看确认，无需修改 |
 
 ---
 
@@ -56,67 +57,7 @@
 
 ## 核心实现
 
-### Task 1: 创建并行工具头文件
-
-**Files:**
-- Create: `e:\0_project\proj2_20260411\proj2\parallel_utils.h`
-
-- [ ] **Step 1: 编写 parallel_utils.h**
-
-```cpp
-#pragma once
-#include <future>
-#include <vector>
-#include <functional>
-
-namespace parallel {
-
-// 执行多个任务并等待全部完成
-// 使用std::async实现，自动利用线程池
-template<typename Func, typename... Args>
-void parallel_execute(std::vector<std::future<void>>& futures, Func&& func, Args&&... args) {
-    futures.emplace_back(std::async(std::launch::async, std::forward<Func>(func), std::forward<Args>(args)...));
-}
-
-// 等待所有future完成
-inline void wait_all(std::vector<std::future<void>>& futures) {
-    for (auto& f : futures) {
-        if (f.valid()) {
-            f.wait();
-        }
-    }
-    futures.clear();
-}
-
-// 简单包装：执行并立即等待
-// 适用于少量任务（2-7个）
-template<typename... Funcs>
-void run_parallel(Funcs&&... funcs) {
-    std::vector<std::future<void>> futures;
-    (futures.emplace_back(std::async(std::launch::async, std::forward<Funcs>(funcs))), ...);
-    for (auto& f : futures) {
-        f.wait();
-    }
-}
-
-} // namespace parallel
-```
-
-- [ ] **Step 2: 验证文件创建成功**
-
-Run: `ls -la e:\0_project\proj2_20260411\proj2\parallel_utils.h`
-Expected: 文件存在，大小约 800-1000 bytes
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add proj2/parallel_utils.h
-git commit -m "feat: add parallel utils for multi-model inference"
-```
-
----
-
-### Task 2: 修改 detect_process 实现阶段1并行 (area0 + area1)
+### Task 1: 修改 detect_process 实现阶段1并行 (area0 + area1)
 
 **Files:**
 - Modify: `e:\0_project\proj2_20260411\proj2\detect.cpp:783-879`
@@ -125,7 +66,6 @@ git commit -m "feat: add parallel utils for multi-model inference"
 
 在 `detect.cpp` 顶部添加：
 ```cpp
-#include "parallel_utils.h"
 #include <future>
 ```
 
@@ -328,8 +268,14 @@ Run: `ls e:\0_project\proj2_20260411\release\perf\`
 $csv = Import-Csv (Get-ChildItem perf\perf_*.csv | Sort-Object LastWriteTime | Select-Object -Last 1)
 $avg = ($csv | Where-Object {$_.component -eq "detect" -and $_.stage -eq "detect_process_total"} | Measure-Object -Property duration_ms -Average).Average
 Write-Host "平均 detect_process_total: $([int]$avg)ms"
-Write-Host "预期: 180ms (基线321ms)"
+Write-Host "基线: 320.71ms；最新两次重跑: 227.43ms；提升约 29.1%"
 ```
+
+实际结果：
+- 基线：`320.71ms`
+- 重跑 1：`227.43ms`
+- 重跑 2：`227.43ms`
+- 结论：较基线下降约 `29.1%`，但仍未达到阶段 1 设计目标中的 `180ms`
 
 - [ ] **Step 5: 验证结果正确性**
 
@@ -376,33 +322,21 @@ Expected: detect_process_total 从 ~350ms 降至 ~200ms
 
 ---
 
-## 完成检查
+## 下一步行动
 
-### Task 6: 阶段1完成总结
+1. **更新规格文档**
+   - 把阶段1的真实实测结果写入 `docs/superpowers/specs/2026-04-25-full-gpu-inference-design.md`
+   - 记录当前结论：Windows 基线 `320.71ms`，最新稳定结果 `227.43ms`，约 `29.1%` 提升
 
-- [ ] **Step 1: 更新文档**
+2. **继续优化阶段1的并行收益**
+   - 方案 A：去掉 `detect.cpp` 里不必要的整图 `clone`，先砍掉最容易拿到的冗余拷贝
+   - 方案 B：减少 `area/detail/element` 热路径里的临时对象和重复预处理，压缩 CPU 侧开销
+   - 方案 C：如果 A/B 后仍没到位，再切到阶段2（GPU 预处理），把 `cv::resize` / `blobFromImage` 从 CPU 挪走
+   - 推荐顺序：**A → B → C**
 
-在 `e:\0_project\proj2_20260411\docs\superpowers\specs\2026-04-25-full-gpu-inference-design.md` 的阶段1表格中添加：
-```markdown
-**阶段1实施状态**: ✅ 已完成
-**实测结果**: 
-- Windows: 321ms → XXXms (-XX%)
-- Jetson: 350ms → XXXms (-XX%)
-```
-
-- [ ] **Step 2: Final Commit**
-
-```bash
-git add docs/superpowers/specs/2026-04-25-full-gpu-inference-design.md
-git commit -m "docs: update stage1 completion status"
-git log --oneline -5
-```
-
-- [ ] **Step 3: 决策是否进入阶段2**
-
-检查实测结果：
-- 如果 Windows < 200ms 且 Jetson < 250ms → **继续阶段2 (GPU预处理)**
-- 如果不达标 → 分析原因，可能需要检查 CUDA Stream 配置
+3. **补齐 Jetson 验证**
+   - 在 Jetson 上完成构建、运行和 `perf` 对比
+   - 补上 Jetson 的真实结果后，再统一判断阶段1是否真正“完成”
 
 ---
 

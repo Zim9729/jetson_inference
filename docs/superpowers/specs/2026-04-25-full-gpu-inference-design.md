@@ -299,13 +299,15 @@ class FullGpuInference::Impl {
 
 **目标**: 7 个模型并行推理，减少串行等待时间
 
+**当前状态**: Windows 侧已完成阶段 1/2 并行化实现与验证；最新稳定结果 `227.43ms`，相对基线 `320.71ms` 提升约 `29.1%`，尚未达到最初预期的 `180ms` 目标。
+
 **适用平台**: Windows (dGPU) 和 Jetson (iGPU) 均可使用
 
 **原理**: 无论 CPU/GPU 内存架构如何，多 CUDA Stream 并行都能提升 GPU 利用率
 
 **修改文件**:
 - `proj2/detect.cpp`: 修改 `detect_process` 或 `in_process` 函数
-- `proj2/thread_pool.h` (新建): 轻量级线程池
+- `proj2/thread_pool.h` (可选): 轻量级线程池封装，当前版本未创建，实际直接在 `detect.cpp` 中使用 `std::async`
 
 **代码变更**:
 ```cpp
@@ -327,8 +329,8 @@ auto f6 = std::async([&]{ element_objs[2]->process(img, areas, r2); });
 **验证指标**:
 | 平台 | 优化前 | 优化后 | 提升 |
 |------|--------|--------|------|
-| Windows | 321ms | ~180ms | -44% |
-| Jetson | ~350ms | ~200ms | -43% |
+| Windows | 320.71ms | 227.43ms | -29.1% |
+| Jetson | ~350ms | 待验证 | 待验证 |
 
 **时间预估**: 2-3 天
 
@@ -454,7 +456,7 @@ Thread 4: Save0       → Save1       → Save2       → ...
 
 **阶段1完成后验证**（最低风险，最高收益）：
 - 如果 Windows < 200ms 且 Jetson < 250ms → 继续阶段2
-- 如果不达标 → 检查 CUDA Stream 是否真正并行
+- 如果不达标 → 先按 A→B→C 继续压缩阶段1收益，再决定是否进入阶段2
 
 **阶段2完成后验证**（中等风险，中等收益）：
 - 如果 Windows < 160ms 且 Jetson < 180ms → 继续阶段3（Jetson专用）
