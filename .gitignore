@@ -34,6 +34,7 @@ compile_commands.json
 
 # Local runtime and tool state
 .omx/
+.worktrees/
 log/
 
 # Python odds and ends if used for local scripts
