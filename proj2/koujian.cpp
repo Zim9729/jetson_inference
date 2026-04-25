@@ -1,6 +1,7 @@
 #include "koujian.h"
 #include <filesystem>
 #include "mylog.h"
+#include "perf_profiler.h"
 namespace fs = std::filesystem;
 using namespace std;
 
@@ -385,6 +386,9 @@ int Ckoujian::process(cv::Mat src,
     //LOG(INFO) << m_elementname <<"{Ckoujian}: batchimg size=" << (int)vimgs.size()<< endl;
     if(false == bflage )
         return false;
+
+    const std::string component = m_elementid.empty() ? "detail" : m_elementid;
+    perf::ScopedTimer timer("stage", component.c_str(), "process_total", -9999, -9999, static_cast<int>(vimgs.size()));
 
     std::vector<cv::Vec6f>vResults;
     if(m_element1.trt.model_version == "yolov5")

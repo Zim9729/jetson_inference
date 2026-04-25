@@ -1,6 +1,7 @@
 #include "area.h"
 #include <filesystem>
 #include "mylog.h"
+#include "perf_profiler.h"
 namespace fs = std::filesystem;
 using namespace std;
 
@@ -189,6 +190,9 @@ int Carea::process(cv::Mat src, std::vector<std::pair<cv::Vec6f,nodeInfo>>&vouts
     ////LOG(INFO) << "{Carea} batchimg size=" << (int)vimgs.size();
     if(false == bflage)
         return false;
+
+    const std::string component = m_elementid.empty() ? "area" : m_elementid;
+    perf::ScopedTimer timer("stage", component.c_str(), "process_total", -9999, -9999, static_cast<int>(vimgs.size()));
 
     vector<cv::Vec6f>vResults;
     if(m_element1.trt.model_version == "yolov5")
