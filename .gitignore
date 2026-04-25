@@ -44,3 +44,29 @@ public/
 *.onnx
 *.engine
 data/*
+.obsidian/*
+graphify-out/*
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS 杂项
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Jetson / Linux 构建输出
+build-*/
+runtime/
+
+# 运行期产物
+.proj2_checkpoint_*.txt
+*.engine.cache
+
+# 本地脚本/笔记杂项
+.graphify_python
+未命名.base
