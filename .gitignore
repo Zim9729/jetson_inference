@@ -45,7 +45,7 @@ public/
 *.engine
 data/*
 .obsidian/*
-graphify-out/*
+graphify-out/
 
 # IDE / editor
 .vscode/
@@ -69,4 +69,3 @@ runtime/
 
 # 本地脚本/笔记杂项
 .graphify_python
-未命名.base
