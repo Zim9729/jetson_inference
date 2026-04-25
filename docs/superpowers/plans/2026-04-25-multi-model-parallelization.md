@@ -10,6 +10,12 @@
 
 **Spec Reference:** @e:\0_project\proj2_20260411\docs\superpowers\specs\2026-04-25-full-gpu-inference-design.md
 
+**实际执行状态:**
+- Stage 1/2 并行化: ✅ 已完成（直接在 `detect.cpp` 内实现）
+- Windows 构建与测试: ✅ 已完成
+- 性能对比: ✅ 已完成，但当前 `detect_process_total` 与基线基本持平
+- Jetson 验证: ⏳ 待执行
+
 ---
 
 ## 文件结构映射
@@ -30,7 +36,7 @@
 - Read: `e:\0_project\proj2_20260411\proj2\detect.cpp:783-879`
 - Read: `e:\0_project\proj2_20260411\proj2\detect.h`
 
-- [ ] **Step 1: 确认 detect_process 函数结构**
+- [x] **Step 1: 确认 detect_process 函数结构**
 
 阅读 `detect.cpp` 783-879行，确认：
 1. `area_obj->process()` 调用位置 (约798行)
@@ -39,7 +45,7 @@
 4. `koujian_obj1->process()` 调用位置 (约824行)
 5. `element_objs[i]->process()` 循环位置 (约834-841行)
 
-- [ ] **Step 2: 确认数据结构定义**
+- [x] **Step 2: 确认数据结构定义**
 
 阅读 `detect.h`，确认以下类型定义：
 - `flawOutInfo` 结构体
@@ -115,7 +121,7 @@ git commit -m "feat: add parallel utils for multi-model inference"
 **Files:**
 - Modify: `e:\0_project\proj2_20260411\proj2\detect.cpp:783-879`
 
-- [ ] **Step 1: 添加头文件包含**
+- [x] **Step 1: 添加头文件包含**
 
 在 `detect.cpp` 顶部添加：
 ```cpp
@@ -136,7 +142,7 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
 */
 ```
 
-- [ ] **Step 3: 编写新的并行 detect_process (阶段1: area0+area1)**
+- [x] **Step 3: 编写新的并行 detect_process (阶段1: area0+area1)**
 
 ```cpp
 int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
@@ -192,7 +198,7 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
     // ... (继续原逻辑)
 ```
 
-- [ ] **Step 4: 编译验证（Windows）**
+- [x] **Step 4: 编译验证（Windows）**
 
 Run: `cd e:\0_project\proj2_20260411 && cmake --build build --config Release --target proj2`
 Expected: 编译成功，无错误
@@ -216,7 +222,7 @@ git commit -m "feat: parallelize area0 and area1 (stage 1)"
 **Files:**
 - Modify: `e:\0_project\proj2_20260411\proj2\detect.cpp:815-841`
 
-- [ ] **Step 1: 替换串行koujian和element处理逻辑**
+- [x] **Step 1: 替换串行koujian和element处理逻辑**
 
 找到并替换以下代码段（约815-841行）：
 
@@ -280,7 +286,7 @@ for(int i=0; i<MAX_DETECT_NUM; i++) {
 }
 ```
 
-- [ ] **Step 2: 编译验证（Windows）**
+- [x] **Step 2: 编译验证（Windows）**
 
 Run: `cd e:\0_project\proj2_20260411 && cmake --build build --config Release --target proj2`
 Expected: 编译成功
@@ -301,21 +307,21 @@ git commit -m "feat: parallelize detail and element models (stage 2)"
 **Files:**
 - Test: 使用现有 perf 系统验证
 
-- [ ] **Step 1: 准备测试数据**
+- [x] **Step 1: 准备测试数据**
 
 确保 `e:\0_project\proj2_20260411\data` 下有测试图片
 
-- [ ] **Step 2: 运行基准测试（并行后）**
+- [x] **Step 2: 运行基准测试（并行后）**
 
 Run: `cd e:\0_project\proj2_20260411\release && .\shell.exe`
 输入数据目录，处理多张图片
 
-- [ ] **Step 3: 收集性能日志**
+- [x] **Step 3: 收集性能日志**
 
 Run: `ls e:\0_project\proj2_20260411\release\perf\`
 查看最新 `perf_*.csv` 文件
 
-- [ ] **Step 4: 对比基线性能**
+- [x] **Step 4: 对比基线性能**
 
 读取最新 perf CSV，与基线对比：
 ```powershell
