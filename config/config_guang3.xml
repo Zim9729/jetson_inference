@@ -1,7 +1,7 @@
 <!--版本日期: 20260107-->
 <root>
     <project name="guang3"/> 
-	<imgInsize w="1024" h="1024"/>	
+	<imgInsize w="4096" h="2048"/>
 	<imgOutsize w="4096" h="2048"/>	
 	<saveResult2txt saveResult2txt="0"/>     <!-- 保存结果至0_flawProj2.txt:0不保存; 1保存-->
 	<saveResultImg saveResultImg="2"/>     <!-- 保存img结果:0不保存; 1保存roi图；2保存roi+大图; 3保存roi+显示置信度(调试用) -->

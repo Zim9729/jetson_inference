@@ -247,6 +247,7 @@ public:
             //加入检测结果
             jsonData["image_width"] = image_width;
             jsonData["image_height"] = image_height;
+            jsonData["count_fastening"] = iCount_Koujian > 0 ? iCount_Koujian : 3;
             jsonData["mileage"] = mileage;
             jsonData["up_mileage"] = up_mileage;
             jsonData["down_mileage"] = down_mileage;

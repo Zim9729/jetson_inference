@@ -14,7 +14,7 @@
 	<thread_type thread_type="1"/>  		<!-- 线程模式：0:保持按path顺序处理；1:单个目录内文件级并发，最终输出仍按原始顺序回收 -->
 	<thread_num thread_num="1"/>  			<!-- thread_type=1时的worker数量，<=0时回退为1 -->
 	<path path="E:\0_project\proj2_20260411\data"/>
-	<auto_detect enable="1" poll_interval_ms="5000" run_date="20260414"/> <!-- run_date格式：YYYYMMDD；留空则默认跑今天 -->
+	<auto_detect enable="1" poll_interval_ms="5000" run_date="20260425"/> <!-- run_date格式：YYYYMMDD；留空则默认跑今天 -->
 </pthreading>
 </root>
 

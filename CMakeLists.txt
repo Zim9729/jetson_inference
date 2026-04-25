@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(proj2_20260411 LANGUAGES CXX)
 
+enable_testing()
+
 if(WIN32)
     enable_language(RC)
 endif()
@@ -72,6 +74,19 @@ target_include_directories(pugixml_vendor
         "${PUGIXML_DIR}"
 )
 
+add_executable(batch_summary_tests
+    "${PROJECT_ROOT}/tests/batch_summary_test.cpp"
+)
+
+target_include_directories(batch_summary_tests
+    PRIVATE
+        "${PROJECT_ROOT}/shell"
+        "${PROJECT_ROOT}/public"
+        "${JSON_INCLUDE_DIR}"
+)
+
+add_test(NAME batch_summary_tests COMMAND batch_summary_tests)
+
 if(WIN32)
     set(OPENCV_INCLUDE_DIR "${PUBLIC_DIR}/OpenCV4.6.0/include")
     set(OPENCV_LIB_DIR "${PUBLIC_DIR}/OpenCV4.6.0/lib")
@@ -104,6 +119,11 @@ if(WIN32)
         "${CUDA_BIN_DIR}/cublasLt64_11.dll"
         "${CUDA_BIN_DIR}/cusolver64_11.dll"
         "${CUDA_BIN_DIR}/cusparse64_11.dll"
+        "${CUDA_BIN_DIR}/cudnn64_8.dll"
+        "${CUDA_BIN_DIR}/cudnn_adv_infer64_8.dll"
+        "${CUDA_BIN_DIR}/cudnn_cnn_infer64_8.dll"
+        "${CUDA_BIN_DIR}/cudnn_ops_infer64_8.dll"
+        "${CUDA_BIN_DIR}/zlibwapi.dll"
         "${TENSORRT_LIB_DIR}/nvinfer.dll"
         "${TENSORRT_LIB_DIR}/nvinfer_plugin.dll"
         "${TENSORRT_LIB_DIR}/nvinfer_builder_resource.dll"

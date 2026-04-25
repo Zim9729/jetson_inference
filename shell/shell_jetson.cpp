@@ -17,6 +17,7 @@
 #include <pugixml.hpp>
 
 #include "auto_detect.h"
+#include "batch_summary.h"
 #include "threading_utils.h"
 
 using DetectFn = char* (*)(char* file_Data, int* det_state, int* iPID);
@@ -536,6 +537,10 @@ static void process_batch_directory(const fs::path& batch_dir, const std::string
     std::vector<fs::path> pending_files = auto_detect::collect_batch_files(batch_dir, json0_jpg1);
 
     process_directory_files(batch_dir, pending_files, json0_jpg1, thread_config, fnDetect, pid);
+    if (!batch_summary::write_defects_summary(batch_dir))
+    {
+        std::cerr << "[batch summary write failed] " << (batch_dir / "defects.json").string() << std::endl;
+    }
 }
 
 static void run_auto_detect_polling(const std::vector<std::string>& total_dirs,
