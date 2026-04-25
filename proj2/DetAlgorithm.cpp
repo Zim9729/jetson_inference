@@ -1,15 +1,66 @@
 #include "DetAlgorithm.h"
 #include "detect.h"
+#include "mylog.h"
 
-Cdetect* m_MainProcess = nullptr;
-char outdata[1024] = { '\0' };
+#include <memory>
+
+#if defined(_WIN32)
+#define PROJ2_API __declspec(dllexport)
+#else
+#define PROJ2_API __attribute__((visibility("default")))
+#endif
+
+#ifdef _WIN32
+extern "C" PROJ2_API void begin_task_log_capture()
+{
+    proj2_log_capture::begin();
+}
+
+extern "C" PROJ2_API const wchar_t* take_task_log_capture()
+{
+    return proj2_log_capture::take();
+}
+
+extern "C" PROJ2_API void append_task_log_text(const wchar_t* rawText)
+{
+    if (rawText == nullptr)
+    {
+        return;
+    }
+
+    CETLog::pub_AppendRawLogText(std::wstring(rawText));
+}
+#else
+extern "C" PROJ2_API void begin_task_log_capture()
+{
+    proj2_log_capture::begin();
+}
+
+extern "C" PROJ2_API const char* take_task_log_capture()
+{
+    return proj2_log_capture::take();
+}
+
+extern "C" PROJ2_API void append_task_log_text(const char* rawText)
+{
+    if (rawText == nullptr)
+    {
+        return;
+    }
+
+    CETLog::pub_AppendRawLogText(std::string(rawText));
+}
+#endif
+
+thread_local std::unique_ptr<Cdetect> m_MainProcess;
+thread_local char outdata[1024] = { '\0' };
 
 
-//det_stateµÄ×´Ì¬:
-//-2ÊäÈëÂ·¾¶\Í¼Æ¬Îª¿Õ£»
-//-1³õÊ¼»¯Ê§°Ü£»
-// 0Õý³£Íê³É¼ì²â,ÇÒÈ±ÏÝ¸öÊý=0£»
-// 1Õý³£Íê³É¼ì²â,ÇÒÈ±ÏÝ¸öÊý>0£»
+//det_stateçš„çŠ¶æ€:
+//-2è¾“å…¥è·¯å¾„\å›¾ç‰‡ä¸ºç©ºï¼›
+//-1åˆå§‹åŒ–å¤±è´¥ï¼›
+// 0æ­£å¸¸å®Œæˆæ£€æµ‹,ä¸”ç¼ºé™·ä¸ªæ•°=0ï¼›
+// 1æ­£å¸¸å®Œæˆæ£€æµ‹,ä¸”ç¼ºé™·ä¸ªæ•°>0ï¼›
 char* detect_process(char* file_Data, int* det_state, int* iPID)
 {
     //printf("file_Data=%s\n", file_Data);
@@ -27,9 +78,10 @@ char* detect_process(char* file_Data, int* det_state, int* iPID)
         return nullptr;
     }
 
-    if(m_MainProcess == nullptr)    {
-        m_MainProcess = new Cdetect(iPID);
-        if (m_MainProcess == nullptr)
+    if (!m_MainProcess)
+    {
+        m_MainProcess.reset(new Cdetect(iPID));
+        if (!m_MainProcess)
             return nullptr;
     }
 
@@ -41,8 +93,9 @@ char* detect_process(char* file_Data, int* det_state, int* iPID)
     //printf("state=%d    out_data=%s\n", state, outdata);
     auto end2 = std::chrono::high_resolution_clock::now();
     auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-    printf("path=%s state=%d(%dms)  flaw=%d \n", sJpgpath.c_str(), *det_state, duration2.count(), iflawsize);
-    //std::cout << "iPID=" << *iPID << " Ö¸ÕëµÄµØÖ·ÊÇ£º" << &outdata << std::endl;
+    std::string summary = "path=" + sJpgpath + " state=" + std::to_string(*det_state) + "(" + std::to_string(duration2.count()) + "ms)  flaw=" + std::to_string(iflawsize) + " \n";
+    ShowLog(INFO_3, _T(""), summary, 0, __FILE__, __FUNCTION__, std::to_string(__LINE__));
+    //std::cout << "iPID=" << *iPID << " æŒ‡é’ˆçš„åœ°å€æ˜¯ï¼š" << &outdata << std::endl;
     if(*det_state == 1)
         return outdata;
     else

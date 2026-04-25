@@ -405,7 +405,7 @@ bool Ctensorrt::ini_trt(MyYolov10Det& model)
             bret = true;
         }
     }
-    std::cout << int(bret);
+    ShowLog(INFO_3, _T(""), std::string("ini_trt result=") + std::to_string(int(bret)), 0, __FILE__, __FUNCTION__, std::to_string(__LINE__));
     return bret;
 }
 

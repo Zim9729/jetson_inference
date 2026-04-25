@@ -47,6 +47,18 @@ inline bool starts_with(const std::string& value, const std::string& prefix)
     return value.size() >= prefix.size() && value.compare(0, prefix.size(), prefix) == 0;
 }
 
+inline bool is_valid_run_date_prefix(const std::string& value)
+{
+    if (value.size() != 8)
+    {
+        return false;
+    }
+
+    return std::all_of(value.begin(), value.end(), [](unsigned char ch) {
+        return std::isdigit(ch) != 0;
+    });
+}
+
 inline bool is_supported_file(const fs::path& file_path, const std::string& json0_jpg1)
 {
     const std::string ext = to_lower_ascii(file_path.extension().string());
@@ -58,7 +70,7 @@ inline bool is_supported_file(const fs::path& file_path, const std::string& json
     return ext == ".json";
 }
 
-inline std::vector<fs::path> find_today_batch_directories(const fs::path& total_dir)
+inline std::vector<fs::path> find_today_batch_directories(const fs::path& total_dir, const std::string& run_date_prefix = std::string())
 {
     std::vector<fs::path> batch_dirs;
     std::error_code ec;
@@ -67,7 +79,7 @@ inline std::vector<fs::path> find_today_batch_directories(const fs::path& total_
         return batch_dirs;
     }
 
-    const std::string prefix = today_prefix();
+    const std::string prefix = run_date_prefix.empty() ? today_prefix() : run_date_prefix;
     if (prefix.empty())
     {
         return batch_dirs;

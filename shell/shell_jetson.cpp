@@ -17,9 +17,31 @@
 #include <pugixml.hpp>
 
 #include "auto_detect.h"
+#include "threading_utils.h"
 
 using DetectFn = char* (*)(char* file_Data, int* det_state, int* iPID);
+using BeginTaskLogCaptureFn = void (*)();
+using TakeTaskLogCaptureFn = const char* (*)();
+using AppendTaskLogTextFn = void (*)(const char*);
 namespace fs = std::filesystem;
+
+struct ThreadConfig
+{
+    int thread_type = 0;
+    int thread_num = 1;
+};
+
+struct FileProcessResult
+{
+    bool checkpointable = true;
+    std::string log;
+    std::string internal_log;
+};
+
+static fs::path g_executable_dir;
+static BeginTaskLogCaptureFn fnBeginTaskLogCapture = nullptr;
+static TakeTaskLogCaptureFn fnTakeTaskLogCapture = nullptr;
+static AppendTaskLogTextFn fnAppendTaskLogText = nullptr;
 
 static fs::path get_executable_dir()
 {
@@ -54,6 +76,24 @@ static unsigned long long fnv1a_64(const std::string& value)
     return hash;
 }
 
+static std::string checkpoint_target_label(const fs::path& target_path)
+{
+    fs::path normalized = target_path.lexically_normal();
+    fs::path label = normalized.filename();
+    if (label.empty())
+    {
+        label = normalized.parent_path().filename();
+    }
+
+    std::string value = label.string();
+    if (value.empty())
+    {
+        value = "root";
+    }
+
+    return value;
+}
+
 static fs::path checkpoint_path_for_target(const fs::path& target_path)
 {
     fs::path parent = target_path.parent_path();
@@ -62,7 +102,7 @@ static fs::path checkpoint_path_for_target(const fs::path& target_path)
         parent = ".";
     }
 
-    const std::string checkpoint_name = ".proj2_checkpoint_" + std::to_string(fnv1a_64(target_path.lexically_normal().string())) + ".txt";
+    const std::string checkpoint_name = ".proj2_checkpoint_" + checkpoint_target_label(target_path) + "_" + std::to_string(fnv1a_64(target_path.lexically_normal().string())) + ".txt";
     return parent / checkpoint_name;
 }
 
@@ -117,48 +157,226 @@ static bool save_checkpoint(const fs::path& checkpoint_path, const std::unordere
     return true;
 }
 
-struct AutoDetectConfig
+static void write_internal_log(const std::string& raw_text)
 {
-    bool enabled = false;
-    int poll_interval_ms = 5000;
-};
+    if (raw_text.empty() || fnAppendTaskLogText == nullptr)
+    {
+        return;
+    }
 
-static void test_one_jpg(const std::string& path, DetectFn fnDetect, int pid)
+    fnAppendTaskLogText(raw_text.c_str());
+}
+
+static FileProcessResult process_one_jpg_file(const std::string& path, DetectFn fnDetect, int pid)
 {
+    FileProcessResult result;
+    const bool capture_enabled = fnBeginTaskLogCapture != nullptr && fnTakeTaskLogCapture != nullptr && fnAppendTaskLogText != nullptr;
+    if (capture_enabled)
+    {
+        fnBeginTaskLogCapture();
+    }
     nlohmann::json j;
     j["imagePath"] = path;
     std::string payload = j.dump();
     int det_state = 0;
-    char* result = fnDetect(payload.data(), &det_state, &pid);
-    std::cout << "path=" << path << " state=" << det_state << std::endl;
-    if (result != nullptr)
+    auto start = std::chrono::high_resolution_clock::now();
+    char* outData = fnDetect(payload.data(), &det_state, &pid);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    if (capture_enabled)
     {
-        std::cout << result << std::endl;
+        const char* captured = fnTakeTaskLogCapture();
+        if (captured != nullptr)
+        {
+            result.internal_log = captured;
+        }
     }
+
+    result.log = "path=" + path + " state=" + std::to_string(det_state) + "\n";
+    if (outData != nullptr)
+    {
+        result.log += std::string(outData) + "\n";
+    }
+    result.log += "time=" + std::to_string(duration.count()) + "ms\n";
+    return result;
 }
 
-static void test_one_json(const std::string& path, DetectFn fnDetect, int pid)
+static FileProcessResult process_one_json_file(const std::string& path, DetectFn fnDetect, int pid)
 {
+    FileProcessResult result;
+    const bool capture_enabled = fnBeginTaskLogCapture != nullptr && fnTakeTaskLogCapture != nullptr && fnAppendTaskLogText != nullptr;
+    if (capture_enabled)
+    {
+        fnBeginTaskLogCapture();
+    }
     std::ifstream file(path);
     if (!file.is_open())
     {
-        std::cerr << "json open failed: " << path << std::endl;
-        return;
+        result.checkpointable = false;
+        result.log = "json open failed: " + path + "\n";
+        if (capture_enabled)
+        {
+            const char* captured = fnTakeTaskLogCapture();
+            if (captured != nullptr)
+            {
+                result.internal_log = captured;
+            }
+        }
+        return result;
     }
 
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string payload = buffer.str();
     int det_state = 0;
-    char* result = fnDetect(payload.data(), &det_state, &pid);
-    std::cout << "path=" << path << " state=" << det_state << std::endl;
-    if (result != nullptr)
+    auto start = std::chrono::high_resolution_clock::now();
+    char* outData = fnDetect(payload.data(), &det_state, &pid);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    if (capture_enabled)
     {
-        std::cout << result << std::endl;
+        const char* captured = fnTakeTaskLogCapture();
+        if (captured != nullptr)
+        {
+            result.internal_log = captured;
+        }
+    }
+
+    result.log = "path=" + path + " state=" + std::to_string(det_state) + "\n";
+    if (outData != nullptr)
+    {
+        result.log += std::string(outData) + "\n";
+    }
+    result.log += "time=" + std::to_string(duration.count()) + "ms\n";
+    return result;
+}
+
+struct AutoDetectConfig
+{
+    bool enabled = false;
+    int poll_interval_ms = 5000;
+    std::string run_date_prefix;
+};
+
+static void test_one_jpg(const std::string& path, DetectFn fnDetect, int pid)
+{
+    FileProcessResult result = process_one_jpg_file(path, fnDetect, pid);
+    if (!result.log.empty())
+    {
+        std::cout << result.log;
     }
 }
 
-static void process_input_path(const std::string& path, const std::string& json0_jpg1, DetectFn fnDetect, int pid)
+static void test_one_json(const std::string& path, DetectFn fnDetect, int pid)
+{
+    FileProcessResult result = process_one_json_file(path, fnDetect, pid);
+    if (!result.log.empty())
+    {
+        std::cout << result.log;
+    }
+}
+
+static std::vector<fs::path> collect_directory_files(const fs::path& dir_path, const std::string& json0_jpg1)
+{
+    std::vector<fs::path> files;
+    std::error_code ec;
+    if (!fs::exists(dir_path, ec) || !fs::is_directory(dir_path, ec))
+    {
+        return files;
+    }
+
+    for (fs::directory_iterator it(dir_path, ec); !ec && it != fs::directory_iterator(); it.increment(ec))
+    {
+        if (ec)
+        {
+            break;
+        }
+
+        if (it->is_directory(ec) || ec)
+        {
+            ec.clear();
+            continue;
+        }
+
+        if (auto_detect::is_supported_file(it->path(), json0_jpg1))
+        {
+            files.push_back(it->path());
+        }
+    }
+
+    std::sort(files.begin(), files.end(), [](const fs::path& lhs, const fs::path& rhs) {
+        return lhs.string() < rhs.string();
+    });
+    return files;
+}
+
+static void process_directory_files(const fs::path& target_path,
+                                    const std::vector<fs::path>& pending_files,
+                                    const std::string& json0_jpg1,
+                                    const ThreadConfig& thread_config,
+                                    DetectFn fnDetect,
+                                    int pid)
+{
+    if (pending_files.empty())
+    {
+        return;
+    }
+
+    const fs::path checkpoint_path = checkpoint_path_for_target(target_path);
+    std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
+    std::vector<fs::path> uncompleted_files;
+    uncompleted_files.reserve(pending_files.size());
+
+    for (const fs::path& file_path : pending_files)
+    {
+        const std::string file_path_str = file_path.string();
+        if (completed.find(file_path_str) != completed.end())
+        {
+            std::cout << "[resume skip] " << file_path_str << std::endl;
+            continue;
+        }
+
+        uncompleted_files.push_back(file_path);
+    }
+
+    if (uncompleted_files.empty())
+    {
+        return;
+    }
+
+    threading_utils::run_ordered_file_tasks(
+        uncompleted_files,
+        thread_config.thread_type,
+        thread_config.thread_num,
+        [&](const fs::path& file_path, std::size_t) {
+            if (json0_jpg1 == "jpg")
+            {
+                return process_one_jpg_file(file_path.string(), fnDetect, pid);
+            }
+            return process_one_json_file(file_path.string(), fnDetect, pid);
+        },
+        [&](const fs::path& file_path, std::size_t, const FileProcessResult& result) {
+            write_internal_log(result.internal_log);
+            if (!result.log.empty())
+            {
+                std::cout << result.log;
+            }
+
+            if (!result.checkpointable)
+            {
+                std::cerr << "[checkpoint skipped] " << file_path.string() << std::endl;
+                return;
+            }
+
+            completed.insert(file_path.string());
+            if (!save_checkpoint(checkpoint_path, completed))
+            {
+                std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
+            }
+        });
+}
+
+static void process_input_path(const std::string& path, const std::string& json0_jpg1, const ThreadConfig& thread_config, DetectFn fnDetect, int pid)
 {
     fs::path p(path);
     if (!fs::exists(p))
@@ -169,56 +387,9 @@ static void process_input_path(const std::string& path, const std::string& json0
 
     if (fs::is_directory(p))
     {
-        const fs::path checkpoint_path = checkpoint_path_for_target(p);
-        std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
-        std::vector<fs::path> pending_files;
+        std::vector<fs::path> pending_files = collect_directory_files(p, json0_jpg1);
 
-        for (const auto& entry : fs::directory_iterator(p))
-        {
-            if (fs::is_directory(entry.status()))
-            {
-                continue;
-            }
-
-            const std::string ext = to_lower_ascii(entry.path().extension().string());
-            if (json0_jpg1 == "jpg" && (ext == ".jpg" || ext == ".jpeg"))
-            {
-                pending_files.push_back(entry.path());
-            }
-            else if (json0_jpg1 != "jpg" && ext == ".json")
-            {
-                pending_files.push_back(entry.path());
-            }
-        }
-
-        std::sort(pending_files.begin(), pending_files.end(), [](const fs::path& lhs, const fs::path& rhs) {
-            return lhs.string() < rhs.string();
-        });
-
-        for (const fs::path& file_path : pending_files)
-        {
-            const std::string file_path_str = file_path.string();
-            if (completed.find(file_path_str) != completed.end())
-            {
-                std::cout << "[resume skip] " << file_path_str << std::endl;
-                continue;
-            }
-
-            if (json0_jpg1 == "jpg")
-            {
-                test_one_jpg(file_path_str, fnDetect, pid);
-            }
-            else
-            {
-                test_one_json(file_path_str, fnDetect, pid);
-            }
-
-            completed.insert(file_path_str);
-            if (!save_checkpoint(checkpoint_path, completed))
-            {
-                std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
-            }
-        }
+        process_directory_files(p, pending_files, json0_jpg1, thread_config, fnDetect, pid);
         return;
     }
 
@@ -233,7 +404,13 @@ static void process_input_path(const std::string& path, const std::string& json0
     const std::string ext = to_lower_ascii(p.extension().string());
     if (json0_jpg1 == "jpg" && (ext == ".jpg" || ext == ".jpeg"))
     {
-        test_one_jpg(path, fnDetect, pid);
+        FileProcessResult result = process_one_jpg_file(path, fnDetect, pid);
+        write_internal_log(result.internal_log);
+        if (!result.log.empty())
+        {
+            std::cout << result.log;
+        }
+
         completed.insert(path);
         if (!save_checkpoint(checkpoint_path, completed))
         {
@@ -244,7 +421,19 @@ static void process_input_path(const std::string& path, const std::string& json0
 
     if (json0_jpg1 != "jpg" && ext == ".json")
     {
-        test_one_json(path, fnDetect, pid);
+        FileProcessResult result = process_one_json_file(path, fnDetect, pid);
+        write_internal_log(result.internal_log);
+        if (!result.log.empty())
+        {
+            std::cout << result.log;
+        }
+
+        if (!result.checkpointable)
+        {
+            std::cerr << "[checkpoint skipped] " << path << std::endl;
+            return;
+        }
+
         completed.insert(path);
         if (!save_checkpoint(checkpoint_path, completed))
         {
@@ -259,6 +448,7 @@ static void process_input_path(const std::string& path, const std::string& json0
 static bool read_project_paths_from_xml(const fs::path& project_xml_path,
                                         std::string& json0_jpg1,
                                         std::vector<std::string>& paths,
+                                        ThreadConfig& thread_config,
                                         AutoDetectConfig& auto_detect_config)
 {
     pugi::xml_document doc;
@@ -284,6 +474,22 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
             json0_jpg1 = "json";
     }
 
+    pugi::xml_node thread_type = pthreading.child("thread_type");
+    if (!thread_type.empty())
+    {
+        thread_config.thread_type = thread_type.attribute("thread_type").as_int(0) == 1 ? 1 : 0;
+    }
+
+    pugi::xml_node thread_num = pthreading.child("thread_num");
+    if (!thread_num.empty())
+    {
+        thread_config.thread_num = thread_num.attribute("thread_num").as_int(1);
+        if (thread_config.thread_num <= 0)
+        {
+            thread_config.thread_num = 1;
+        }
+    }
+
     pugi::xml_node auto_detect = pthreading.child("auto_detect");
     if (!auto_detect.empty())
     {
@@ -292,6 +498,20 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
         if (auto_detect_config.poll_interval_ms <= 0)
         {
             auto_detect_config.poll_interval_ms = 5000;
+        }
+
+        std::string run_date = auto_detect.attribute("run_date").as_string();
+        if (!run_date.empty())
+        {
+            if (auto_detect::is_valid_run_date_prefix(run_date))
+            {
+                auto_detect_config.run_date_prefix = run_date;
+            }
+            else
+            {
+                std::cerr << "[auto detect] invalid run_date='" << run_date << "', fallback to today" << std::endl;
+                auto_detect_config.run_date_prefix.clear();
+            }
         }
     }
 
@@ -305,7 +525,7 @@ static bool read_project_paths_from_xml(const fs::path& project_xml_path,
     return !paths.empty();
 }
 
-static void process_batch_directory(const fs::path& batch_dir, const std::string& json0_jpg1, DetectFn fnDetect, int pid)
+static void process_batch_directory(const fs::path& batch_dir, const std::string& json0_jpg1, const ThreadConfig& thread_config, DetectFn fnDetect, int pid)
 {
     if (!fs::exists(batch_dir) || !fs::is_directory(batch_dir))
     {
@@ -313,41 +533,18 @@ static void process_batch_directory(const fs::path& batch_dir, const std::string
         return;
     }
 
-    const fs::path checkpoint_path = checkpoint_path_for_target(batch_dir);
-    std::unordered_set<std::string> completed = load_checkpoint(checkpoint_path);
     std::vector<fs::path> pending_files = auto_detect::collect_batch_files(batch_dir, json0_jpg1);
 
-    for (const fs::path& file_path : pending_files)
-    {
-        const std::string file_path_str = file_path.string();
-        if (completed.find(file_path_str) != completed.end())
-        {
-            std::cout << "[resume skip] " << file_path_str << std::endl;
-            continue;
-        }
-
-        if (json0_jpg1 == "jpg")
-        {
-            test_one_jpg(file_path_str, fnDetect, pid);
-        }
-        else
-        {
-            test_one_json(file_path_str, fnDetect, pid);
-        }
-
-        completed.insert(file_path_str);
-        if (!save_checkpoint(checkpoint_path, completed))
-        {
-            std::cerr << "[checkpoint write failed] " << checkpoint_path.string() << std::endl;
-        }
-    }
+    process_directory_files(batch_dir, pending_files, json0_jpg1, thread_config, fnDetect, pid);
 }
 
 static void run_auto_detect_polling(const std::vector<std::string>& total_dirs,
                                     const std::string& json0_jpg1,
+                                    const ThreadConfig& thread_config,
                                     DetectFn fnDetect,
                                     int pid,
-                                    int poll_interval_ms)
+                                    int poll_interval_ms,
+                                    const std::string& run_date_prefix)
 {
     while (true)
     {
@@ -360,17 +557,18 @@ static void run_auto_detect_polling(const std::vector<std::string>& total_dirs,
                 continue;
             }
 
-            std::vector<fs::path> batch_dirs = auto_detect::find_today_batch_directories(total_dir);
+            std::vector<fs::path> batch_dirs = auto_detect::find_today_batch_directories(total_dir, run_date_prefix);
             if (batch_dirs.empty())
             {
-                std::cout << "[auto detect] no today batch directories under " << total_dir.string() << std::endl;
+                const std::string effective_prefix = run_date_prefix.empty() ? auto_detect::today_prefix() : run_date_prefix;
+                std::cout << "[auto detect] no batch directories for " << effective_prefix << " under " << total_dir.string() << std::endl;
                 continue;
             }
 
             for (const fs::path& batch_dir : batch_dirs)
             {
                 std::cout << "[auto detect] batch directory " << batch_dir.string() << std::endl;
-                process_batch_directory(batch_dir, json0_jpg1, fnDetect, pid);
+                process_batch_directory(batch_dir, json0_jpg1, thread_config, fnDetect, pid);
             }
         }
 
@@ -382,6 +580,7 @@ int main()
 {
     std::string json0_jpg1 = "jpg";
     int pid = 100;
+    ThreadConfig thread_config;
     AutoDetectConfig auto_detect_config;
 
     const fs::path executable_dir = get_executable_dir();
@@ -407,23 +606,29 @@ int main()
         return 1;
     }
 
+    fnBeginTaskLogCapture = reinterpret_cast<BeginTaskLogCaptureFn>(dlsym(handle, "begin_task_log_capture"));
+    fnTakeTaskLogCapture = reinterpret_cast<TakeTaskLogCaptureFn>(dlsym(handle, "take_task_log_capture"));
+    fnAppendTaskLogText = reinterpret_cast<AppendTaskLogTextFn>(dlsym(handle, "append_task_log_text"));
+
     const fs::path project_xml_path = executable_dir / "config" / "project.xml";
     std::vector<std::string> project_paths;
-    if (read_project_paths_from_xml(project_xml_path, json0_jpg1, project_paths, auto_detect_config))
+    if (read_project_paths_from_xml(project_xml_path, json0_jpg1, project_paths, thread_config, auto_detect_config))
     {
         std::cout << "test type is " << json0_jpg1 << " !!!" << std::endl;
         std::cout << "project.xml paths loaded from: " << project_xml_path << std::endl;
+        g_executable_dir = executable_dir;
 
         if (auto_detect_config.enabled)
         {
-            std::cout << "auto detect enabled, poll interval = " << auto_detect_config.poll_interval_ms << " ms" << std::endl;
-            run_auto_detect_polling(project_paths, json0_jpg1, fnDetect, pid, auto_detect_config.poll_interval_ms);
+            const std::string effective_prefix = auto_detect_config.run_date_prefix.empty() ? auto_detect::today_prefix() : auto_detect_config.run_date_prefix;
+            std::cout << "auto detect enabled, poll interval = " << auto_detect_config.poll_interval_ms << " ms, run date prefix = " << effective_prefix << std::endl;
+            run_auto_detect_polling(project_paths, json0_jpg1, thread_config, fnDetect, pid, auto_detect_config.poll_interval_ms, auto_detect_config.run_date_prefix);
         }
         else
         {
             for (const std::string& path : project_paths)
             {
-                process_input_path(path, json0_jpg1, fnDetect, pid);
+                process_input_path(path, json0_jpg1, thread_config, fnDetect, pid);
             }
         }
 
@@ -440,7 +645,7 @@ int main()
         return 0;
     }
 
-    process_input_path(input_path, json0_jpg1, fnDetect, pid);
+    process_input_path(input_path, json0_jpg1, thread_config, fnDetect, pid);
 
     dlclose(handle);
     return 0;

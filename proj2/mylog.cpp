@@ -138,6 +138,71 @@ void CETLog::pub_WriteDownLog(wchar_t wszAPPName[256], wchar_t wszAuthor[20],
     (void)bWritten;
 }
 
+void CETLog::pub_AppendRawLogText(const std::wstring& rawText)
+{
+    if (rawText.empty())
+    {
+        return;
+    }
+
+    wchar_t wszExeMainPath[256];
+    pub_GetCurExeMainPath(wszExeMainPath);
+    wcscat_s(wszExeMainPath, _T("log"));
+    if (_waccess(wszExeMainPath, 0) != 0)
+    {
+        ::CreateDirectoryW(wszExeMainPath, NULL);
+    }
+
+    int nIndex = 0;
+    wchar_t wszLogName[512];
+    do
+    {
+        memset(wszLogName, 0x00, sizeof(wszLogName));
+        wsprintfW(wszLogName, _T("%s\\info_%s_PID%d_%03d.log\0"), wszExeMainPath, L"", m_iPID, nIndex);
+        // Replace the empty date placeholder with today's date using the same selection logic as pub_WriteDownLog.
+        wchar_t wszToday[32];
+        SYSTEMTIME st = pub_GetCurrentDateTime(wszToday);
+        (void)st;
+        wsprintfW(wszLogName, _T("%s\\info_%04d%02d%02d_PID%d_%03d.log\0"),
+            wszExeMainPath, st.wYear, st.wMonth, st.wDay, m_iPID, nIndex);
+
+        DWORD dwSizeLow = 0;
+        DWORD dwSizeHigh = 0;
+        if (pub_GetFileSize(wszLogName, dwSizeLow, dwSizeHigh))
+        {
+            if (dwSizeLow > 8000000)
+            {
+                nIndex++;
+                continue;
+            }
+        }
+        break;
+    } while (true);
+
+    bool bNewFile = false;
+    if (!pub_FileExist(wszLogName)) bNewFile = true;
+
+    HANDLE hFile = CreateFileW(wszLogName, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        return;
+    }
+
+    if (bNewFile)
+    {
+        DWORD dwWrittenByte = 0;
+        wchar_t head = 0xfeff;
+        BOOL bWritten = WriteFile(hFile, &head, sizeof(wchar_t), &dwWrittenByte, NULL);
+        (void)bWritten;
+    }
+
+    SetFilePointer(hFile, 0, NULL, FILE_END);
+    DWORD dwWrittenByte = 0;
+    WriteFile(hFile, rawText.c_str(), static_cast<DWORD>(rawText.size() * sizeof(wchar_t)), &dwWrittenByte, NULL);
+    SetEndOfFile(hFile);
+    CloseHandle(hFile);
+}
+
 void CETLog::pub_SetLogLevel(int iLevel, int iPID)
 {
     m_iPID = iPID;
@@ -275,6 +340,28 @@ void CETLog::pub_WriteDownLog(const std::string& appName, const std::string& aut
     (void)author;
     (void)filename;
     (void)lngLine;
+}
+
+void CETLog::pub_AppendRawLogText(const std::string& rawText)
+{
+    if (rawText.empty())
+    {
+        return;
+    }
+
+    const std::filesystem::path logPath = SelectLogFile("info_" + FormatTime("%Y%m%d"));
+    if (logPath.empty())
+    {
+        return;
+    }
+
+    std::ofstream stream(logPath, std::ios::out | std::ios::app);
+    if (!stream.is_open())
+    {
+        return;
+    }
+
+    stream << rawText;
 }
 
 void CETLog::pub_SetLogLevel(int iLevel, int iPID)
