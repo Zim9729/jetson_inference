@@ -112,6 +112,8 @@ bool Celement::batchsize_imgs(cv::Mat img,
                               std::vector<std::pair<cv::Vec6f,nodeInfo>>vInlocs,
                               std::vector<imgsInfo>&vimgs)
 {
+    vimgs.reserve(vInlocs.size());
+
     for(int i=0;i<(int)vInlocs.size();i++)
     {
         cv::Vec6f val = vInlocs[i].first;
@@ -135,6 +137,7 @@ bool Celement::batchsize_imgs(cv::Mat img,
         }
         if(in_element == 1 && padding != -1 && r.height> 10)
             cut_batchsize_img(img,r,areaID,padding,vimgs);
+        
     }
 
     if((int)vimgs.size()<=0)

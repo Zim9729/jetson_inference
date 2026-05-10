@@ -787,7 +787,7 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         return -1; //初始化失败,直接返回
     std::vector<flawOutInfo>vflaws;
     vflaws.clear();
-    cv::Mat img = param.img.clone();
+    cv::Mat img = param.img;
     if(img.cols!= m_imgOutsize.width || img.rows!= m_imgOutsize.height)
         cv::resize(img,img,m_imgOutsize);
     if((int)img.channels() != 3)
@@ -798,12 +798,12 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
     std::vector<std::pair<cv::Vec6f,nodeInfo>>areas_area1;
     auto future_area0 = std::async(std::launch::async, [&]() {
         if(area_obj != nullptr && istate_area == 1) {
-            area_obj->process(img.clone(), areas_area0, &imgname);
+            area_obj->process(img, areas_area0, &imgname);
         }
     });
     auto future_area1 = std::async(std::launch::async, [&]() {
         if(area_obj1 != nullptr && istate_area1 == 1) {
-            area_obj1->process(img.clone(), areas_area1, &imgname);
+            area_obj1->process(img, areas_area1, &imgname);
         }
     });
 
@@ -811,7 +811,9 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
     std::vector<std::pair<cv::Vec6f, nodeInfo>>areas_koujian(areas_area0);
     future_area1.get();
 
-    std::vector<std::pair<cv::Vec6f,nodeInfo>>areas = areas_area0;
+    std::vector<std::pair<cv::Vec6f,nodeInfo>>areas;
+    areas.reserve(areas_area0.size() + areas_area1.size() + 1);
+    areas.insert(areas.end(), areas_area0.begin(), areas_area0.end());
     areas.insert(areas.end(), areas_area1.begin(), areas_area1.end());
 
     int istate_daocha = 0;//是否为道岔
@@ -860,10 +862,16 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         future.get();
     }
 
+    vkoujian_flaws.reserve(vkoujian_flaws_detail0.size() + vkoujian_flaws_detail1.size());
     vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail0.begin(), vkoujian_flaws_detail0.end());
     vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail1.begin(), vkoujian_flaws_detail1.end());
     if(m_xlbh_2koujian.combine_2koujian == 1) //扣件连缺失
         change_lianxu_koujian_node(img.cols,img.rows, vkoujian_flaws);
+
+    size_t total_element_flaws = 0;
+    for(int i=0;i<MAX_DETECT_NUM;i++)
+        total_element_flaws += velement_flaws[i].size();
+    vflaws.reserve(vkoujian_flaws.size() + total_element_flaws);
 
     if ((int)vkoujian_flaws.size()>0)
         vflaws.insert(vflaws.end(), vkoujian_flaws.begin(), vkoujian_flaws.end());

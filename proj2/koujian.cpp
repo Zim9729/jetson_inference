@@ -69,6 +69,8 @@ bool Ckoujian::batchsize_imgs(cv::Mat img,
                               std::vector<std::pair<cv::Vec6f,nodeInfo>>vInlocs,
                               std::vector<imgsInfo>&vimgs)
 {
+    vimgs.reserve(vInlocs.size());
+
     for(int i=0;i<(int)vInlocs.size();i++)
     {
         cv::Vec6f val = vInlocs[i].first;
@@ -92,11 +94,10 @@ bool Ckoujian::batchsize_imgs(cv::Mat img,
         }
         if(in_element == 1 && padding != -1 && r.height> 10)
         {
-            imgsInfo tmp;
-            tmp.r = r;
-            tmp.padding = padding;
-            tmp.areaiD = areaID;
-            vimgs.push_back(tmp);
+            vimgs.emplace_back();
+            vimgs.back().r = r;
+            vimgs.back().padding = padding;
+            vimgs.back().areaiD = areaID;
         }
     }
 

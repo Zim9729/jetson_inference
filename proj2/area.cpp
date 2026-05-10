@@ -60,11 +60,12 @@ bool Carea::batchsize_imgs(cv::Mat img, std::vector<imgsInfo>&vimgs)
     if(icut_cnt < 0 || img.cols<=0 || img.rows<=0)
         return false;
 
+    vimgs.reserve(icut_cnt > 1 ? icut_cnt : 1);
+
     if(icut_cnt == 0 || icut_cnt == 1)
     {
-        imgsInfo tmp;
-        tmp.r = cv::Rect(0,0,img.cols-1,img.rows-1);
-        vimgs.push_back(tmp);
+        vimgs.emplace_back();
+        vimgs.back().r = cv::Rect(0,0,img.cols-1,img.rows-1);
     }
     else
     {
@@ -77,9 +78,8 @@ bool Carea::batchsize_imgs(cv::Mat img, std::vector<imgsInfo>&vimgs)
                 r.y = img.rows - 1 - r.height;
             if (1 == outside(r, 0, 0, img.cols, img.rows))
                 continue;
-            imgsInfo tmp;
-            tmp.r = r;
-            vimgs.push_back(tmp);
+            vimgs.emplace_back();
+            vimgs.back().r = r;
         }
     }
     //std::cout<< "{Carea::batchsize-imgs}: vimgs size=" << (int)vimgs.size() << std::endl;
