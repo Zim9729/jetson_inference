@@ -5,7 +5,7 @@
 	<imgOutsize w="4096" h="2048"/>	
 	<saveResult2txt saveResult2txt="0"/>     <!-- 保存结果至0_flawProj2.txt:0不保存; 1保存-->
 	<saveResultImg saveResultImg="0"/>     <!-- 保存img结果:0不保存; 1保存roi图；2保存roi+大图; 3保存roi+显示置信度(调试用) -->
-	<saveResultJson saveResultJson="1"/>   <!-- 保存json结果:0不保存; 1保存_result.json文件 -->
+	<saveResultJson saveResultJson="1" mode="both" format="both" defectImage="1"/>   <!-- 保存结果:0不保存; 1保存 mode: both image defect; format: json csv both; defectImage: 0不保存单缺陷图片 1保存-->
 	<debugFolder debugFolder=""/> 		   <!-- 保存调试结果的文件夹全路径:“”不保存 -->
 	<!--*******区域1*******-->
     <area0 name="0_region1"> 
@@ -69,13 +69,13 @@
 				<name_11 padding="0" areaID="1002" partID="1001" flawID="02" name="W型弹条正常" w="30" h="30" fp="100" mergeBox="1"/>			
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
-				<xlbh_1 GuiDao_XLBH_type="XLBH-110" DaoCha_XLBH_type="XLBH-296" XLBH_name="弹条缺失"/>
-				<xlbh_2 GuiDao_XLBH_type="XLBH-110" DaoCha_XLBH_type="XLBH-296" XLBH_name="弹条缺失"/>
-				<xlbh_4 GuiDao_XLBH_type="XLBH-110" DaoCha_XLBH_type="XLBH-296" XLBH_name="弹条缺失"/>
-				<xlbh_8 GuiDao_XLBH_type="XLBH-382" DaoCha_XLBH_type="XLBH-227" XLBH_name="地脚螺栓缺失"/>
+				<xlbh_1 GuiDao_XLBH_type="16" DaoCha_XLBH_type="16" XLBH_name="弹条缺失"/>
+				<xlbh_2 GuiDao_XLBH_type="16" DaoCha_XLBH_type="16" XLBH_name="弹条缺失"/>
+				<xlbh_4 GuiDao_XLBH_type="16" DaoCha_XLBH_type="16" XLBH_name="弹条缺失"/>
+				<xlbh_8 GuiDao_XLBH_type="48" DaoCha_XLBH_type="48" XLBH_name="地脚螺栓缺失"/>
 				<xlbh_7 GuiDao_XLBH_type="XLBH-111" DaoCha_XLBH_type="XLBH-308" XLBH_name="轨距块缺失"/>
-				<xlbh_9 GuiDao_XLBH_type="XLBH-99" DaoCha_XLBH_type="XLBH-99" XLBH_name="护轨螺栓缺失"/>
-				<xlbh_10 GuiDao_XLBH_type="XLBH-110" DaoCha_XLBH_type="XLBH-296" XLBH_name="垫片歪斜"/>
+				<xlbh_9 GuiDao_XLBH_type="48" DaoCha_XLBH_type="48" XLBH_name="护轨螺栓缺失"/>
+				<xlbh_10 GuiDao_XLBH_type="50" DaoCha_XLBH_type="50" XLBH_name="垫片歪斜"/>
 			</XLBHs>
 		</trtInfo>
 	</detail0>
@@ -93,12 +93,12 @@
 				<name_2 padding="1" areaID="1700" partID="1801" flawID="26" name="2预埋底座" w="30" h="30" fp="100" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
-				<xlbh_0 GuiDao_XLBH_type="XLBH-83" DaoCha_XLBH_type="XLBH-83" XLBH_name="混凝土枕失效-严重掉块"/>
-				<xlbh_1 GuiDao_XLBH_type="XLBH-99" DaoCha_XLBH_type="XLBH-99" XLBH_name="弹条移位"/>
+				<xlbh_0 GuiDao_XLBH_type="192" DaoCha_XLBH_type="192" XLBH_name="混凝土枕失效-严重掉块"/>
+				<xlbh_1 GuiDao_XLBH_type="32" DaoCha_XLBH_type="32" XLBH_name="弹条移位"/>
 			</XLBHs>
 		</trtInfo>
 		<E_yiwei padding="0" areaID="1000-1001-1008" partID="1001" flawID="05" name="弹条移位" w="30" h="10" fp="50" mergeBox="0"/>
-		<E_yiwei_XLBH GuiDao_XLBH_type="XLBH-110" DaoCha_XLBH_type="XLBH-297" XLBH_name="弹条移位"/> <!--轨道编码XLBH-->
+		<E_yiwei_XLBH GuiDao_XLBH_type="32" DaoCha_XLBH_type="32" XLBH_name="弹条移位"/> <!--轨道编码XLBH-->
 	</detail1>
 	<!--*******钢轨面缺陷*******-->
 	<element0 name="4_rail"> 
@@ -115,8 +115,8 @@
 				<name_3 padding="1" areaID="1008" partID="1100" flawID="10" name="其它" w="30" h="50" fp="100" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
-				<xlbh_0 GuiDao_XLBH_type="XLBH-46" DaoCha_XLBH_type="XLBH-46" XLBH_name="顶面擦伤"/>
-				<xlbh_1 GuiDao_XLBH_type="XLBH-45" DaoCha_XLBH_type="XLBH-45" XLBH_name="轨面连续掉块"/>
+				<xlbh_0 GuiDao_XLBH_type="2" DaoCha_XLBH_type="2" XLBH_name="顶面擦伤"/>
+				<xlbh_1 GuiDao_XLBH_type="3" DaoCha_XLBH_type="3" XLBH_name="轨面连续掉块"/>
 				<xlbh_2 GuiDao_XLBH_type="XLBH-493" DaoCha_XLBH_type="XLBH-494" XLBH_name="表面波磨"/>
 			</XLBHs>
 		</trtInfo>
@@ -147,14 +147,14 @@
 				<name_14 areaID="1200" partID="1200" flawID="16" name="字符" w="30" h="50" fp="100" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
-				<xlbh_0 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_1 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_2 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_3 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_4 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_5 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_6 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
-				<xlbh_7 GuiDao_XLBH_type="XLBH-140" DaoCha_XLBH_type="XLBH-256" XLBH_name="道床异物"/>
+				<xlbh_0 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_1 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_2 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_3 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_4 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_5 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_6 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
+				<xlbh_7 GuiDao_XLBH_type="1536" DaoCha_XLBH_type="1536" XLBH_name="道床异物"/>
 			</XLBHs>
 		</trtInfo>
 	</element1>
@@ -175,13 +175,13 @@
 				<name_5 padding="0" areaID="1200" partID="1200" flawID="22" name="5道床积水" w="30" h="30" fp="50" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
-				<xlbh_0 GuiDao_XLBH_type="XLBH-137" DaoCha_XLBH_type="XLBH-137" XLBH_name="道床板裂纹"/>
-				<xlbh_1 GuiDao_XLBH_type="XLBH-133" DaoCha_XLBH_type="XLBH-248" XLBH_name="道床翻浆冒泥"/>
+				<xlbh_0 GuiDao_XLBH_type="1024" DaoCha_XLBH_type="1024" XLBH_name="道床板裂纹"/>
+				<xlbh_1 GuiDao_XLBH_type="51" DaoCha_XLBH_type="51" XLBH_name="道床翻浆冒泥"/>
 				<xlbh_5 GuiDao_XLBH_type="XLBH-340" DaoCha_XLBH_type="XLBH-255" XLBH_name="道床积水"/>
 			</XLBHs>
 		</trtInfo>
 		<yanzhong_fjmn padding="0" areaID="1200" partID="1201" flawID="31" name="严重翻浆冒泥(带轨枕)" w="30" h="10" fp="50" mergeBox="1"/>
-		<yanzhong_fjmn_XLBH GuiDao_XLBH_type="XLBH-1111" DaoCha_XLBH_type="XLBH-1112" XLBH_name="严重翻浆冒泥(带轨枕)"/>   <!--轨道编码XLBH-->	
+		<yanzhong_fjmn_XLBH GuiDao_XLBH_type="51" DaoCha_XLBH_type="51" XLBH_name="严重翻浆冒泥(带轨枕)"/>   <!--轨道编码XLBH-->
 		<yanzhong_js padding="0" areaID="1200" partID="1201" flawID="22" name="严重积水(带轨枕)" w="30" h="10" fp="40" mergeBox="1"/>
 		<yanzhong_js_XLBH GuiDao_XLBH_type="XLBH-542" DaoCha_XLBH_type="XLBH-543" XLBH_name="严重积水(带轨枕)"/>   <!--轨道编码XLBH-->	
 	</element2>

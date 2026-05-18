@@ -28,6 +28,9 @@ struct iniInfo
     int showfp = 0;    
     int saveResult2txt = 0;
     int saveResult_json = 0;
+    std::string saveResult_json_mode = "image";
+    std::string saveResult_json_format = "json";
+    int saveResult_defect_image = 0;
     cv::Size imgInsize = cv::Size(0,0);
     cv::Size imgOutsize = cv::Size(0,0);
     std::string project_name = "";

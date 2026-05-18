@@ -29,6 +29,14 @@ void write_json_file(const fs::path& path, const nlohmann::json& data)
     out << data.dump(4);
 }
 
+void write_text_file(const fs::path& path, const std::string& data)
+{
+    fs::create_directories(path.parent_path());
+    std::ofstream out(path);
+    require(out.is_open(), "failed to open " + path.string());
+    out << data;
+}
+
 fs::path make_temp_batch()
 {
     const fs::path root = fs::temp_directory_path() / "proj2_batch_summary_test";
@@ -110,6 +118,121 @@ void test_writes_only_defective_images_with_mileage_in_meters()
     require(rewritten.size() == 2, "summary rewrite should not duplicate entries");
 }
 
+void test_writes_summary_from_single_defect_jsons()
+{
+    const fs::path batch_dir = make_temp_batch();
+
+    write_json_file(
+        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.json",
+        {
+            {"count_fastening", 3},
+            {"defect", {
+                {"id", "defect-1"},
+                {"type", "16"},
+                {"xmin", 10},
+                {"ymin", 20},
+                {"xmax", 30},
+                {"ymax", 40},
+            }},
+            {"imagePath", (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string()},
+        });
+
+    write_json_file(
+        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_1.json",
+        {
+            {"count_fastening", 3},
+            {"defect", {
+                {"id", "defect-2"},
+                {"type", "48"},
+                {"xmin", 50},
+                {"ymin", 60},
+                {"xmax", 70},
+                {"ymax", 80},
+            }},
+            {"imagePath", (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string()},
+        });
+
+    require(batch_summary::write_defects_summary(batch_dir), "single-defect summary write should succeed");
+
+    std::ifstream in(batch_dir / "defects.json");
+    require(in.is_open(), "summary file should exist");
+
+    nlohmann::json summary;
+    in >> summary;
+
+    require(summary.is_array(), "summary should be an array");
+    require(summary.size() == 1, "summary should group defect jsons by image");
+    require(summary[0]["imagePath"] == "20260415083000/E1/00018_-30405500_1776575709040.jpg", "imagePath should be batch-parent relative");
+    require(summary[0]["defects"].size() == 2, "single-defect jsons should be merged into defects array");
+    require(summary[0]["defects"][0]["type"] == "16", "first defect should be copied");
+    require(summary[0]["defects"][1]["type"] == "48", "second defect should be copied");
+}
+
+void test_writes_summary_from_single_defect_csvs()
+{
+    const fs::path batch_dir = make_temp_batch();
+    const std::string header = "imagePath,image_width,image_height,count_fastening,mileage,up_mileage,down_mileage,id,type,xmin,ymin,xmax,ymax,defect_mileage,length\n";
+    const std::string image_path = (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string();
+
+    write_text_file(
+        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.csv",
+        header + image_path + ",4096,2048,3,10.0,9.0,11.0,defect-1,16,10,20,30,40,1.25,2.5\n");
+
+    write_text_file(
+        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_1.csv",
+        header + image_path + ",4096,2048,3,10.0,9.0,11.0,defect-2,48,50,60,70,80,3.25,4.5\n");
+
+    require(batch_summary::write_defects_summary(batch_dir), "single-defect csv summary write should succeed");
+
+    std::ifstream in(batch_dir / "defects.json");
+    require(in.is_open(), "summary file should exist");
+
+    nlohmann::json summary;
+    in >> summary;
+
+    require(summary.is_array(), "summary should be an array");
+    require(summary.size() == 1, "summary should group defect csvs by image");
+    require(summary[0]["imagePath"] == "20260415083000/E1/00018_-30405500_1776575709040.jpg", "imagePath should be batch-parent relative");
+    require(summary[0]["defects"].size() == 2, "single-defect csvs should be merged into defects array");
+    require(summary[0]["defects"][0]["type"] == "16", "first csv defect should be copied");
+    require(summary[0]["defects"][1]["type"] == "48", "second csv defect should be copied");
+}
+
+void test_prefers_single_defect_json_when_csv_has_same_stem()
+{
+    const fs::path batch_dir = make_temp_batch();
+    const std::string header = "imagePath,image_width,image_height,count_fastening,mileage,up_mileage,down_mileage,id,type,xmin,ymin,xmax,ymax,defect_mileage,length\n";
+    const std::string image_path = (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string();
+
+    write_json_file(
+        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.json",
+        {
+            {"count_fastening", 3},
+            {"defect", {
+                {"id", "defect-1"},
+                {"type", "16"},
+                {"xmin", 10},
+                {"ymin", 20},
+                {"xmax", 30},
+                {"ymax", 40},
+            }},
+            {"imagePath", image_path},
+        });
+
+    write_text_file(
+        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.csv",
+        header + image_path + ",4096,2048,3,10.0,9.0,11.0,defect-1,16,10,20,30,40,1.25,2.5\n");
+
+    require(batch_summary::write_defects_summary(batch_dir), "single-defect mixed summary write should succeed");
+
+    std::ifstream in(batch_dir / "defects.json");
+    nlohmann::json summary;
+    in >> summary;
+
+    require(summary.size() == 1, "matching single-defect json and csv should not duplicate image entries");
+    require(summary[0]["defects"].size() == 1, "matching single-defect json and csv should not duplicate defects");
+}
+
 } // namespace
 
 int main()
@@ -117,6 +240,9 @@ int main()
     try
     {
         test_writes_only_defective_images_with_mileage_in_meters();
+        test_writes_summary_from_single_defect_jsons();
+        test_writes_summary_from_single_defect_csvs();
+        test_prefers_single_defect_json_when_csv_has_same_stem();
     }
     catch (const std::exception& e)
     {

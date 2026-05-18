@@ -2,40 +2,20 @@
 <root>
 	<all_XLBHs state="1"/> <!--state=1输出所有编码；state=0仅输出编码outstate=1的编码；-->
 	<XLBHs> <!--编码 outstate=0不输出=1输出-->
-		<xlbh outstate="1" XLBH_type="XLBH-118" XLBH_name="轨道_扣件连2失效"/>
-		<xlbh outstate="1" XLBH_type="XLBH-325" XLBH_name="道岔_扣件连2失效"/>
-		<xlbh outstate="1" XLBH_type="XLBH-110" XLBH_name="轨道_弹条缺失"/>
-		<xlbh outstate="1" XLBH_type="XLBH-296" XLBH_name="道岔_弹条缺失"/>
-		<xlbh outstate="1" XLBH_type="XLBH-382" XLBH_name="轨道_地脚螺栓缺失"/>
-		<xlbh outstate="1" XLBH_type="XLBH-227" XLBH_name="道岔_地脚螺栓缺失"/>
-		<xlbh outstate="1" XLBH_type="XLBH-111" XLBH_name="轨道_轨距块缺失"/>
-		<xlbh outstate="1" XLBH_type="XLBH-308" XLBH_name="道岔_轨距块缺失"/>
-		<xlbh outstate="1" XLBH_type="XLBH-99" XLBH_name="护轨螺栓缺失/接头螺栓缺失/出丝不足/接头螺栓松动/接头螺母缺失/连接杆螺母缺失"/>	
-		<xlbh outstate="1" XLBH_type="XLBH-380" XLBH_name="轨道_弹条移位歪斜"/>
-		<xlbh outstate="1" XLBH_type="XLBH-297" XLBH_name="道岔_弹条移位歪斜"/>
-		<xlbh outstate="0" XLBH_type="XLBH-83" XLBH_name="混凝土枕失效-严重掉块"/>	
-		<xlbh outstate="0" XLBH_type="XLBH-136" XLBH_name="轨道_轨枕裂缝"/>
-		<xlbh outstate="0" XLBH_type="XLBH-501" XLBH_name="道岔_轨枕裂缝"/>		
-		<xlbh outstate="1" XLBH_type="XLBH-234" XLBH_name="立柱螺母缺失/立柱螺栓缺失"/>	
-		<xlbh outstate="1" XLBH_type="XLBH-524" XLBH_name="轨道_接头错牙"/>
-		<xlbh outstate="1" XLBH_type="XLBH-525" XLBH_name="道岔_接头错牙"/>	
-		<xlbh outstate="0" XLBH_type="XLBH-46" XLBH_name="顶面擦伤"/>	
-		<xlbh outstate="0" XLBH_type="XLBH-45" XLBH_name="轨面连续掉块"/>	
-		<xlbh outstate="0" XLBH_type="XLBH-493" XLBH_name="轨道_表面波磨"/>
-		<xlbh outstate="0" XLBH_type="XLBH-494" XLBH_name="道岔_表面波磨"/>	
-		<xlbh outstate="0" XLBH_type="XLBH-140" XLBH_name="轨道_道床异物"/>
-		<xlbh outstate="0" XLBH_type="XLBH-256" XLBH_name="道岔_道床异物"/>	
-		<xlbh outstate="1" XLBH_type="XLBH-137" XLBH_name="道床板裂纹"/>	
-		<xlbh outstate="0" XLBH_type="XLBH-340" XLBH_name="轨道_道床积水"/>
-		<xlbh outstate="0" XLBH_type="XLBH-255" XLBH_name="道岔_道床积水"/>	
-		<xlbh outstate="1" XLBH_type="XLBH-133" XLBH_name="轨道_道床翻浆冒泥"/>
-		<xlbh outstate="1" XLBH_type="XLBH-248" XLBH_name="道岔_道床翻浆冒泥"/>	
-		<xlbh outstate="1" XLBH_type="XLBH-542" XLBH_name="轨道_道床严重翻浆冒泥"/>
-		<xlbh outstate="1" XLBH_type="XLBH-543" XLBH_name="道岔_道床严重翻浆冒泥"/>	
-		<xlbh outstate="1" XLBH_type="XLBH-542" XLBH_name="轨道_道床严重积水"/>
-		<xlbh outstate="1" XLBH_type="XLBH-543" XLBH_name="道岔_道床严重积水"/>
-		<xlbh outstate="1" XLBH_type="XLBH-128" XLBH_name="轨道_垫板窜出或偏斜"/>
-		<xlbh outstate="1" XLBH_type="XLBH-300" XLBH_name="道岔_垫板窜出或偏斜"/>			
+		<xlbh outstate="1" XLBH_type="2" XLBH_name="钢轨表面擦伤"/>
+		<xlbh outstate="1" XLBH_type="3" XLBH_name="钢轨剥离掉块"/>
+		<xlbh outstate="1" XLBH_type="16" XLBH_name="弹条缺失"/>
+		<xlbh outstate="1" XLBH_type="24" XLBH_name="弹条断裂"/>
+		<xlbh outstate="1" XLBH_type="32" XLBH_name="弹条位移"/>
+		<xlbh outstate="1" XLBH_type="128" XLBH_name="轨枕裂开"/>
+		<xlbh outstate="1" XLBH_type="192" XLBH_name="轨枕剥离掉块"/>
+		<xlbh outstate="1" XLBH_type="1024" XLBH_name="道床裂开"/>
+		<xlbh outstate="1" XLBH_type="1536" XLBH_name="道床异物"/>
+		<xlbh outstate="1" XLBH_type="8192" XLBH_name="螺母缺失"/>
+		<xlbh outstate="1" XLBH_type="48" XLBH_name="螺栓缺失"/>
+		<xlbh outstate="1" XLBH_type="49" XLBH_name="螺栓松脱"/>
+		<xlbh outstate="1" XLBH_type="50" XLBH_name="垫片位移"/>
+		<xlbh outstate="1" XLBH_type="51" XLBH_name="翻浆冒泥"/>
 	</XLBHs>
 </root>
 

@@ -1056,7 +1056,11 @@ int Cdetect::in_process(char* file_Data, std::string& OutData,std::string& sOutJ
                 m_pic_mileage,
                 m_pic_up_mileage,
                 m_pic_down_mileage,
-                m_config_param.saveResult_json);
+                m_config_param.saveResult_json,
+                m_config_param.saveResult_json_mode,
+                m_config_param.saveResult_json_format,
+                m_config_param.saveResult_defect_image,
+                param.img);
             const auto perf_save_json_end = std::chrono::steady_clock::now();
             perf::record_event("stage", "detect", "save_json",
                 std::chrono::duration_cast<std::chrono::milliseconds>(perf_save_json_end - perf_save_json_start).count(),

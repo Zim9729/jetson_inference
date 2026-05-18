@@ -45,6 +45,9 @@ public:
         int showfp = 0;      //结果图上显示置信度
         int isave_result2txt = 0;
         int isave_result_json = 0;
+        std::string save_result_json_mode = "image";
+        std::string save_result_json_format = "json";
+        int isave_result_defect_image = 0;
         int combine_2koujian = 0;
         cv::Size out_size(0,0);
         cv::Size in_size(0,0);
@@ -81,6 +84,13 @@ public:
         showfp = pugi::xml_node(doc.child("root").child("saveResultImg")).attribute("showfp").as_int();
         isave_result2txt = pugi::xml_node(doc.child("root").child("saveResult2txt")).attribute("saveResult2txt").as_int();
         isave_result_json = pugi::xml_node(doc.child("root").child("saveResultJson")).attribute("saveResultJson").as_int();
+        save_result_json_mode = pugi::xml_node(doc.child("root").child("saveResultJson")).attribute("mode").as_string("image");
+        if (save_result_json_mode != "image" && save_result_json_mode != "defect" && save_result_json_mode != "both")
+            save_result_json_mode = "image";
+        save_result_json_format = pugi::xml_node(doc.child("root").child("saveResultJson")).attribute("format").as_string("json");
+        if (save_result_json_format != "json" && save_result_json_format != "csv" && save_result_json_format != "both")
+            save_result_json_format = "json";
+        isave_result_defect_image = pugi::xml_node(doc.child("root").child("saveResultJson")).attribute("defectImage").as_int(0);
         combine_2koujian = pugi::xml_node(doc.child("root").child("combine_2koujian")).attribute("combine_2koujian").as_int();
         if (combine_2koujian == 1)
         {
@@ -111,6 +121,9 @@ public:
             ini_param.showfp = showfp;
             ini_param.saveResult2txt = isave_result2txt;
             ini_param.saveResult_json = isave_result_json;
+            ini_param.saveResult_json_mode = save_result_json_mode;
+            ini_param.saveResult_json_format = save_result_json_format;
+            ini_param.saveResult_defect_image = isave_result_defect_image;
             ini_param.imgInsize = in_size;
             ini_param.imgOutsize = out_size;
             ini_param.debug_folder = debug_folder;
@@ -226,7 +239,7 @@ public:
             std::filesystem::path fitype_XLBH_type = std::filesystem::u8path(xml_XLBH_type.c_str());
             std::string type_XLBH_type = fitype_XLBH_type.string();
             //printf("%s\n",showinfo.c_str());
-            if(type_XLBH_type.length()>1)
+            if(!type_XLBH_type.empty())
                 outXmbhs[k].XLBH_type = type_XLBH_type;
         }
     return true;
