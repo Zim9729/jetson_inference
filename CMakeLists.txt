@@ -292,6 +292,57 @@ if(WIN32)
         OUTPUT_NAME "shell"
     )
 
+    add_executable(myjson_write_tests
+        "${PROJECT_ROOT}/tests/myjson_write_test.cpp"
+    )
+
+    set(MYJSON_WRITE_TESTS_INCLUDES
+        "${PROJECT_ROOT}/proj2"
+        "${PROJECT_ROOT}/public"
+        "${PROJECT_ROOT}/shell"
+        "${JSON_INCLUDE_DIR}"
+        "${OPENCV_INCLUDE_DIR}"
+        "${BOOST_INCLUDE_DIR}"
+    )
+    if(VS_ATL_INCLUDE_DIR)
+        list(APPEND MYJSON_WRITE_TESTS_INCLUDES "${VS_ATL_INCLUDE_DIR}")
+    endif()
+
+    target_include_directories(myjson_write_tests
+        PRIVATE
+            ${MYJSON_WRITE_TESTS_INCLUDES}
+    )
+
+    set(MYJSON_WRITE_TESTS_LINK_DIRS
+        "${OPENCV_LIB_DIR}"
+    )
+    if(VS_ATL_X64_LIB_DIR)
+        list(APPEND MYJSON_WRITE_TESTS_LINK_DIRS "${VS_ATL_X64_LIB_DIR}")
+    endif()
+
+    target_link_directories(myjson_write_tests
+        PRIVATE
+            ${MYJSON_WRITE_TESTS_LINK_DIRS}
+    )
+
+    target_link_libraries(myjson_write_tests
+        PRIVATE
+            "${OPENCV_WORLD_LIB}"
+    )
+
+    if(MSVC)
+        target_compile_options(myjson_write_tests PRIVATE /utf-8)
+    endif()
+
+    target_compile_definitions(myjson_write_tests
+        PRIVATE
+            UNICODE
+            _UNICODE
+            _CRT_SECURE_NO_WARNINGS
+    )
+
+    add_test(NAME myjson_write_tests COMMAND myjson_write_tests)
+
     file(GLOB_RECURSE STAGE_RUNTIME_CONFIG_INPUTS CONFIGURE_DEPENDS
         "${PROJECT_ROOT}/config/*"
     )

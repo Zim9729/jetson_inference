@@ -330,6 +330,11 @@ inline std::string csv_string_or_default(const std::unordered_map<std::string, s
     return it->second;
 }
 
+inline bool has_csv_key(const std::unordered_map<std::string, std::string>& row, const std::string& key)
+{
+    return row.find(key) != row.end();
+}
+
 inline bool append_single_defect_csv_item(const fs::path& defect_path,
                                           const fs::path& batch_dir,
                                           const std::unordered_set<std::string>& image_result_paths,
@@ -354,18 +359,41 @@ inline bool append_single_defect_csv_item(const fs::path& defect_path,
         row[headers[i]] = values[i];
 
     nlohmann::json result;
-    result["count_fastening"] = csv_int_or_default(row, "count_fastening", kDefaultCountFastening);
-    result["imagePath"] = csv_string_or_default(row, "imagePath");
-    result["defect"] = {
-        {"id", csv_string_or_default(row, "id")},
-        {"type", csv_string_or_default(row, "type")},
-        {"xmin", csv_int_or_default(row, "xmin", 0)},
-        {"ymin", csv_int_or_default(row, "ymin", 0)},
-        {"xmax", csv_int_or_default(row, "xmax", 0)},
-        {"ymax", csv_int_or_default(row, "ymax", 0)},
-        {"mileage", csv_double_or_default(row, "defect_mileage", 0.0)},
-        {"length", csv_double_or_default(row, "length", 0.0)},
-    };
+    if (has_csv_key(row, "FAULTINF_IMGPATH"))
+    {
+        const int pos_x = csv_int_or_default(row, "FAULTINF_POS_X", 0);
+        const int pos_y = csv_int_or_default(row, "FAULTINF_POS_Y", 0);
+        const int pos_w = csv_int_or_default(row, "FAULTINF_POS_W", 0);
+        const int pos_h = csv_int_or_default(row, "FAULTINF_POS_H", 0);
+        const long long location_mm = static_cast<long long>(csv_double_or_default(row, "FAULTINF_LOCATION_MM", 0.0));
+        result["count_fastening"] = kDefaultCountFastening;
+        result["imagePath"] = csv_string_or_default(row, "FAULTINF_IMGPATH");
+        result["defect"] = {
+            {"id", csv_string_or_default(row, "ID")},
+            {"type", csv_string_or_default(row, "FAULTINF_CLASS")},
+            {"xmin", pos_x},
+            {"ymin", pos_y},
+            {"xmax", pos_x + pos_w},
+            {"ymax", pos_y + pos_h},
+            {"mileage", static_cast<double>(location_mm) / 1000.0},
+            {"length", static_cast<double>(pos_h)},
+        };
+    }
+    else
+    {
+        result["count_fastening"] = csv_int_or_default(row, "count_fastening", kDefaultCountFastening);
+        result["imagePath"] = csv_string_or_default(row, "imagePath");
+        result["defect"] = {
+            {"id", csv_string_or_default(row, "id")},
+            {"type", csv_string_or_default(row, "type")},
+            {"xmin", csv_int_or_default(row, "xmin", 0)},
+            {"ymin", csv_int_or_default(row, "ymin", 0)},
+            {"xmax", csv_int_or_default(row, "xmax", 0)},
+            {"ymax", csv_int_or_default(row, "ymax", 0)},
+            {"mileage", csv_double_or_default(row, "defect_mileage", 0.0)},
+            {"length", csv_double_or_default(row, "length", 0.0)},
+        };
+    }
 
     return append_single_defect_result(result, batch_dir, image_result_paths, summary);
 }

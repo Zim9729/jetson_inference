@@ -1,11 +1,11 @@
 <!--版本日期: 20260107-->
 <root>
     <project name="guang3"/> 
-	<imgInsize w="4096" h="2048"/>
-	<imgOutsize w="4096" h="2048"/>	
+	<imgInsize w="4096" h="4096"/>
+	<imgOutsize w="4096" h="4096"/>	
 	<saveResult2txt saveResult2txt="0"/>     <!-- 保存结果至0_flawProj2.txt:0不保存; 1保存-->
 	<saveResultImg saveResultImg="0"/>     <!-- 保存img结果:0不保存; 1保存roi图；2保存roi+大图; 3保存roi+显示置信度(调试用) -->
-	<saveResultJson saveResultJson="1" mode="both" format="both" defectImage="1"/>   <!-- 保存结果:0不保存; 1保存 mode: both image defect; format: json csv both; defectImage: 0不保存单缺陷图片 1保存-->
+	<saveResultJson saveResultJson="1" mode="defect" format="csv" defectImage="1"/>   <!-- 保存结果:0不保存; 1保存 mode: both image defect; format: json csv both; defectImage: 0不保存单缺陷图片 1保存-->
 	<debugFolder debugFolder=""/> 		   <!-- 保存调试结果的文件夹全路径:“”不保存 -->
 	<!--*******区域1*******-->
     <area0 name="0_region1"> 

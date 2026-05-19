@@ -123,11 +123,11 @@ void test_writes_summary_from_single_defect_jsons()
     const fs::path batch_dir = make_temp_batch();
 
     write_json_file(
-        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.json",
+        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.json",
         {
             {"count_fastening", 3},
             {"defect", {
-                {"id", "defect-1"},
+                {"id", "1776575709040"},
                 {"type", "16"},
                 {"xmin", 10},
                 {"ymin", 20},
@@ -138,11 +138,11 @@ void test_writes_summary_from_single_defect_jsons()
         });
 
     write_json_file(
-        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_1.json",
+        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_1.json",
         {
             {"count_fastening", 3},
             {"defect", {
-                {"id", "defect-2"},
+                {"id", "1776575709040"},
                 {"type", "48"},
                 {"xmin", 50},
                 {"ymin", 60},
@@ -171,16 +171,16 @@ void test_writes_summary_from_single_defect_jsons()
 void test_writes_summary_from_single_defect_csvs()
 {
     const fs::path batch_dir = make_temp_batch();
-    const std::string header = "imagePath,image_width,image_height,count_fastening,mileage,up_mileage,down_mileage,id,type,xmin,ymin,xmax,ymax,defect_mileage,length\n";
+    const std::string header = "ID,FAULTINF_BASLIB_INDEX,FAULTINF_BASLIB_IMGNAME,FAULTINF_IMGNAME,FAULTINF_PART_IMGNAME,FAULTINF_IMGPATH,FAULTINF_OVER_NUM,FAULTINF_LEVEL,FAULTINF_START_STATION,FAULTINF_STOP_STATION,FAULTINF_ROUTENO,FAULTINF_TRAIN_NUM,FAULTINF_CAM_POSITION,FAULTINF_TRAINCATETYPE,FAULTINF_RECOGNITION_NUM,FAULTINF_OBJECT,FAULTINF_CLASS,FAULTINF_POS_X,FAULTINF_POS_Y,FAULTINF_POS_W,FAULTINF_POS_H,FAULTINF_PROC_STATUS,FAULTINF_PROC_RESULT,FAULTINF_DOWNLOAD_TIME,FAULTINF_FEEDBACK_TIME,FAULTINF_MAINTENANCE,FAULTINF_OPERATOR_NAME,FAULTINF_CONFIRM_TIME,FAULTINF_REPAIR_FAULT_IDENTIFICATION_COUNT,FAULTINF_TEMP_IMAGE_CHECK_COUNT,FAULTINF_DETE_KM_MARK,FAULTINF_BASIS_KM_MARK,FAULTINF_GENERATE_TIME,FAULTINF_LOCATION_MM,FAULTINF_OBJECT_ID,FAULTINF_TYPE_ID,FAULTINF_CAM_NUM,FAULTINF_DETE_IMAGE_NAME\n";
     const std::string image_path = (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string();
 
     write_text_file(
-        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.csv",
-        header + image_path + ",4096,2048,3,10.0,9.0,11.0,defect-1,16,10,20,30,40,1.25,2.5\n");
+        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.csv",
+        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_03187188_1776575709040_0.jpg," + image_path + ",1,,,,3,03187188,E1,unknown,1,弹条,16,10,20,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:00,-30405500,1,16,1,00018_-30405500_1776575709040.jpg\n");
 
     write_text_file(
-        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_1.csv",
-        header + image_path + ",4096,2048,3,10.0,9.0,11.0,defect-2,48,50,60,70,80,3.25,4.5\n");
+        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_1.csv",
+        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_03187188_1776575709040_1.jpg," + image_path + ",1,,,,3,03187188,E1,unknown,1,螺母,48,50,60,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:01,-30405500,2,48,1,00018_-30405500_1776575709040.jpg\n");
 
     require(batch_summary::write_defects_summary(batch_dir), "single-defect csv summary write should succeed");
 
@@ -201,15 +201,15 @@ void test_writes_summary_from_single_defect_csvs()
 void test_prefers_single_defect_json_when_csv_has_same_stem()
 {
     const fs::path batch_dir = make_temp_batch();
-    const std::string header = "imagePath,image_width,image_height,count_fastening,mileage,up_mileage,down_mileage,id,type,xmin,ymin,xmax,ymax,defect_mileage,length\n";
+    const std::string header = "ID,FAULTINF_BASLIB_INDEX,FAULTINF_BASLIB_IMGNAME,FAULTINF_IMGNAME,FAULTINF_PART_IMGNAME,FAULTINF_IMGPATH,FAULTINF_OVER_NUM,FAULTINF_LEVEL,FAULTINF_START_STATION,FAULTINF_STOP_STATION,FAULTINF_ROUTENO,FAULTINF_TRAIN_NUM,FAULTINF_CAM_POSITION,FAULTINF_TRAINCATETYPE,FAULTINF_RECOGNITION_NUM,FAULTINF_OBJECT,FAULTINF_CLASS,FAULTINF_POS_X,FAULTINF_POS_Y,FAULTINF_POS_W,FAULTINF_POS_H,FAULTINF_PROC_STATUS,FAULTINF_PROC_RESULT,FAULTINF_DOWNLOAD_TIME,FAULTINF_FEEDBACK_TIME,FAULTINF_MAINTENANCE,FAULTINF_OPERATOR_NAME,FAULTINF_CONFIRM_TIME,FAULTINF_REPAIR_FAULT_IDENTIFICATION_COUNT,FAULTINF_TEMP_IMAGE_CHECK_COUNT,FAULTINF_DETE_KM_MARK,FAULTINF_BASIS_KM_MARK,FAULTINF_GENERATE_TIME,FAULTINF_LOCATION_MM,FAULTINF_OBJECT_ID,FAULTINF_TYPE_ID,FAULTINF_CAM_NUM,FAULTINF_DETE_IMAGE_NAME\n";
     const std::string image_path = (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string();
 
     write_json_file(
-        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.json",
+        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.json",
         {
             {"count_fastening", 3},
             {"defect", {
-                {"id", "defect-1"},
+                {"id", "1776575709040"},
                 {"type", "16"},
                 {"xmin", 10},
                 {"ymin", 20},
@@ -220,8 +220,8 @@ void test_prefers_single_defect_json_when_csv_has_same_stem()
         });
 
     write_text_file(
-        batch_dir / "E1" / "defects" / "00018_-30405500_1776575709040_0.csv",
-        header + image_path + ",4096,2048,3,10.0,9.0,11.0,defect-1,16,10,20,30,40,1.25,2.5\n");
+        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.csv",
+        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_03187188_1776575709040_0.jpg," + image_path + ",1,,,,3,03187188,E1,unknown,1,弹条,16,10,20,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:00,-30405500,1,16,1,00018_-30405500_1776575709040.jpg\n");
 
     require(batch_summary::write_defects_summary(batch_dir), "single-defect mixed summary write should succeed");
 

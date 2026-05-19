@@ -51,6 +51,7 @@ private:
         std::string jpgname,
         int resultState,
         std::vector<flawOutInfo>vResults);
+    std::string resolve_defect_output_root(const std::string& image_path) const;
     bool sort_flaws_by_codeXmL(std::string XLBH_type);
     void change_lianxu_koujian_node(int Imgwidth, int Imgheight, std::vector<flawOutInfo>& vkoujian_flaws);
     void cal_phy_sameCol_koujian(cv::Mat img, std::vector<std::pair<cv::Vec6f, nodeInfo>>areas, int iflawCnt);
@@ -64,6 +65,8 @@ private:
     std::string m_cameraName = "camera0"; //相机名
     std::string m_result = "";        //保存图片结果文件夹（图片所在同级目录下建立一个flaws文件夹）
     std::string m_result_json = "";   //保存json结果文件夹（图片所在同级目录下建立一个json文件夹）
+    std::vector<std::string> m_project_input_paths;
+    std::string m_auto_detect_run_date;
     cv::Size m_imgOutsize = cv::Size(0,0);
     int m_ini_state = -2; //ini state
     int m_iPID = -1;

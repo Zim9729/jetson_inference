@@ -11,6 +11,7 @@
 #include "perf_profiler.h"
 #include <mutex>
 #include <random>
+#include <cctype>
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -34,6 +35,103 @@ std::mutex mtx;
 Cjson m_objj;
 
 namespace {
+
+std::string to_lower_ascii(std::string value)
+{
+    for (char& ch : value)
+    {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    return value;
+}
+
+std::string current_date_text()
+{
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+    std::tm local_tm{};
+#ifdef _WIN32
+    localtime_s(&local_tm, &time_now);
+#else
+    localtime_r(&time_now, &local_tm);
+#endif
+
+    char buffer[16] = {0};
+    if (std::strftime(buffer, sizeof(buffer), "%Y%m%d", &local_tm) == 0)
+        return {};
+    return buffer;
+}
+
+bool is_valid_run_date_text(const std::string& value)
+{
+    if (value.size() != 8)
+        return false;
+
+    for (char ch : value)
+    {
+        if (std::isdigit(static_cast<unsigned char>(ch)) == 0)
+            return false;
+    }
+    return true;
+}
+
+std::size_t path_component_count(const fs::path& path)
+{
+    return static_cast<std::size_t>(std::distance(path.begin(), path.end()));
+}
+
+bool path_starts_with(const fs::path& path, const fs::path& prefix)
+{
+    auto path_it = path.begin();
+    auto prefix_it = prefix.begin();
+    for (; prefix_it != prefix.end(); ++prefix_it, ++path_it)
+    {
+        if (path_it == path.end())
+            return false;
+
+        std::string path_part = path_it->string();
+        std::string prefix_part = prefix_it->string();
+#ifdef _WIN32
+        path_part = to_lower_ascii(path_part);
+        prefix_part = to_lower_ascii(prefix_part);
+#endif
+        if (path_part != prefix_part)
+            return false;
+    }
+    return true;
+}
+
+void read_project_export_settings(const std::string& project_xml_path,
+                                  std::vector<std::string>& project_paths,
+                                  std::string& run_date_prefix)
+{
+    project_paths.clear();
+    run_date_prefix.clear();
+
+    pugi::xml_document doc;
+    const pugi::xml_parse_result result = doc.load_file(project_xml_path.c_str(), pugi::parse_default, pugi::encoding_utf8);
+    if (!result)
+        return;
+
+    const pugi::xml_node pthreading = doc.child("root").child("pthreading");
+    if (pthreading.empty())
+        return;
+
+    for (pugi::xml_node path_node : pthreading.children("path"))
+    {
+        const std::string path_value = path_node.attribute("path").as_string();
+        if (!path_value.empty())
+            project_paths.push_back(path_value);
+    }
+
+    const pugi::xml_node auto_detect = pthreading.child("auto_detect");
+    if (!auto_detect.empty())
+    {
+        const std::string run_date = auto_detect.attribute("run_date").as_string();
+        if (is_valid_run_date_text(run_date))
+            run_date_prefix = run_date;
+    }
+}
 
 fs::path resolve_runtime_root()
 {
@@ -149,6 +247,7 @@ int Cdetect::initrt()
     }
     perf::configure_from_project_xml(projectXml_path, runtime_root);
     istate = cxml.read_project_xml(projectXml_path,sInproject);
+    read_project_export_settings(projectXml_path, m_project_input_paths, m_auto_detect_run_date);
     if(istate != 1 || sInproject.length()<3) {
         ShowLog(ERROR_1, _T("#####ERROR: xml not exists: "), projectXml_path, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
         m_ini_state = -1;
@@ -426,6 +525,43 @@ int Cdetect::get_name_part(std::string file_path)
     }
     else
         return -1;
+}
+
+std::string Cdetect::resolve_defect_output_root(const std::string& image_path) const
+{
+    fs::path image_fs_path = fs::u8path(image_path.c_str()).lexically_normal();
+    fs::path export_root;
+    std::size_t best_depth = 0;
+
+    for (const std::string& configured_path_text : m_project_input_paths)
+    {
+        const fs::path configured_path = fs::u8path(configured_path_text.c_str()).lexically_normal();
+        if (!path_starts_with(image_fs_path, configured_path))
+            continue;
+
+        const std::size_t depth = path_component_count(configured_path);
+        if (export_root.empty() || depth > best_depth)
+        {
+            export_root = configured_path;
+            best_depth = depth;
+        }
+    }
+
+    if (export_root.empty())
+    {
+        if (!m_project_input_paths.empty())
+            export_root = fs::u8path(m_project_input_paths.front().c_str());
+        else
+            export_root = fs::u8path(m_parent.c_str());
+    }
+
+    const std::string effective_run_date = m_auto_detect_run_date.empty() ? current_date_text() : m_auto_detect_run_date;
+    const fs::path defect_root = export_root / "fault" / (effective_run_date + "_fault");
+    std::error_code ec;
+    fs::create_directories(defect_root, ec);
+    if (ec)
+        return "";
+    return defect_root.string();
 }
 
 //det_state的状态:
@@ -1060,7 +1196,8 @@ int Cdetect::in_process(char* file_Data, std::string& OutData,std::string& sOutJ
                 m_config_param.saveResult_json_mode,
                 m_config_param.saveResult_json_format,
                 m_config_param.saveResult_defect_image,
-                param.img);
+                param.img,
+                resolve_defect_output_root(param.jpgpath));
             const auto perf_save_json_end = std::chrono::steady_clock::now();
             perf::record_event("stage", "detect", "save_json",
                 std::chrono::duration_cast<std::chrono::milliseconds>(perf_save_json_end - perf_save_json_start).count(),
