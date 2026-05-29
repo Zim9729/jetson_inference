@@ -123,7 +123,7 @@ void test_writes_summary_from_single_defect_jsons()
     const fs::path batch_dir = make_temp_batch();
 
     write_json_file(
-        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.json",
+        batch_dir / "E1" / "defects" / "fault_187188_1776575709040_0.json",
         {
             {"count_fastening", 3},
             {"defect", {
@@ -138,7 +138,7 @@ void test_writes_summary_from_single_defect_jsons()
         });
 
     write_json_file(
-        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_1.json",
+        batch_dir / "E1" / "defects" / "fault_187188_1776575709040_1.json",
         {
             {"count_fastening", 3},
             {"defect", {
@@ -175,12 +175,12 @@ void test_writes_summary_from_single_defect_csvs()
     const std::string image_path = (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string();
 
     write_text_file(
-        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.csv",
-        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_03187188_1776575709040_0.jpg," + image_path + ",1,,,,3,03187188,E1,unknown,1,弹条,16,10,20,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:00,-30405500,1,16,1,00018_-30405500_1776575709040.jpg\n");
+        batch_dir / "E1" / "defects" / "fault_187188_1776575709040_0.csv",
+        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_187188_1776575709040_0.jpg," + image_path + ",1,,,,3,187188,E1,U,1,弹条,16,10,20,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:00,-30405500,1,16,1,00018_-30405500_1776575709040.jpg\n");
 
     write_text_file(
-        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_1.csv",
-        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_03187188_1776575709040_1.jpg," + image_path + ",1,,,,3,03187188,E1,unknown,1,螺母,48,50,60,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:01,-30405500,2,48,1,00018_-30405500_1776575709040.jpg\n");
+        batch_dir / "E1" / "defects" / "fault_187188_1776575709040_1.csv",
+        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_187188_1776575709040_1.jpg," + image_path + ",1,,,,3,187188,E1,U,1,螺母,48,50,60,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:01,-30405500,2,48,1,00018_-30405500_1776575709040.jpg\n");
 
     require(batch_summary::write_defects_summary(batch_dir), "single-defect csv summary write should succeed");
 
@@ -205,7 +205,7 @@ void test_prefers_single_defect_json_when_csv_has_same_stem()
     const std::string image_path = (batch_dir / "E1" / "00018_-30405500_1776575709040.jpg").string();
 
     write_json_file(
-        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.json",
+        batch_dir / "E1" / "defects" / "fault_187188_1776575709040_0.json",
         {
             {"count_fastening", 3},
             {"defect", {
@@ -220,8 +220,8 @@ void test_prefers_single_defect_json_when_csv_has_same_stem()
         });
 
     write_text_file(
-        batch_dir / "E1" / "defects" / "fault_03187188_1776575709040_0.csv",
-        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_03187188_1776575709040_0.jpg," + image_path + ",1,,,,3,03187188,E1,unknown,1,弹条,16,10,20,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:00,-30405500,1,16,1,00018_-30405500_1776575709040.jpg\n");
+        batch_dir / "E1" / "defects" / "fault_187188_1776575709040_0.csv",
+        header + ",1776575709040,,00018_-30405500_1776575709040.jpg,fault_187188_1776575709040_0.jpg," + image_path + ",1,,,,3,187188,E1,U,1,弹条,16,10,20,20,20,0,,,,,,,0,0,,,2026/05/18 22:00:00,-30405500,1,16,1,00018_-30405500_1776575709040.jpg\n");
 
     require(batch_summary::write_defects_summary(batch_dir), "single-defect mixed summary write should succeed");
 

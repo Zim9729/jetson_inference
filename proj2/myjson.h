@@ -320,8 +320,8 @@ public:
             cam_position = cam_num > 0 ? ("camera" + std::to_string(cam_num)) : "camera0";
 
         std::string train_cate_type = json_string_or_default(one, {"FAULTINF_TRAINCATETYPE", "trainCateType", "train_catetype", "trainCategoryType"}, "");
-        if (train_cate_type.empty())
-            train_cate_type = "unknown";
+        if (train_cate_type.empty() || train_cate_type == "unknown")
+            train_cate_type = infer_direction_from_directory(image_path);
 
         const std::string fault_object = json_string_or_default(one, {"FAULTINF_OBJECT", "objectName", "object"}, infer_fault_object_name(flaw, type_id));
         const int fault_object_id = fault_object_id_from_name(fault_object, 0);
@@ -332,7 +332,7 @@ public:
         const int pos_h = (std::max)(0, defect.value("ymax", 0) - pos_y);
         const long long location_mm = json_long_long_or_default(one, {"FAULTINF_LOCATION_MM", "locationMM", "location_mm"}, parse_location_mm_from_name(source_image_name, 0));
         const std::string route_no_text = "3";
-        const std::string train_num_text = "03187188";
+        const std::string train_num_text = "187188";
         const std::string dete_km_mark = json_string_or_default(one, {"FAULTINF_DETE_KM_MARK", "deteKmMark", "detectKmMark", "detect_km_mark"}, location_mm > 0 ? std::to_string(location_mm) : "");
         const std::string basis_km_mark = json_string_or_default(one, {"FAULTINF_BASIS_KM_MARK", "basisKmMark", "basis_km_mark", "baseKmMark"}, dete_km_mark);
         const nlohmann::json proc_result_value = find_json_value(one, {"FAULTINF_PROC_RESULT", "procResult", "proc_result"}) != nullptr
@@ -545,7 +545,7 @@ public:
 
         const std::string image_path = json_string_or_default(jsonData, {"FAULTINF_IMGPATH", "imagePath"}, image_stem + ".jpg");
         const std::string image_name = filename_from_path_text(image_path);
-        const std::string train_num_text = "03187188";
+        const std::string train_num_text = "187188";
         const std::string legacy_defect_export_prefix = make_legacy_defect_export_prefix(image_name, train_num_text);
 
         remove_old_defect_jsons(defect_folder, image_stem, legacy_defect_export_prefix);
@@ -823,6 +823,67 @@ public:
 
         const std::string mileage_text = stem.substr(first_separator + 1, second_separator - first_separator - 1);
         return text_to_long_long_or_default(mileage_text, default_value);
+    }
+
+    std::string infer_direction_from_directory(const std::string& image_path)
+    {
+        std::error_code ec;
+        std::filesystem::path path = std::filesystem::u8path(image_path.c_str());
+        std::filesystem::path parent = path.parent_path();
+        if (parent.empty() || !std::filesystem::exists(parent, ec))
+            return "U";
+
+        std::vector<std::filesystem::path> files;
+        for (std::filesystem::directory_iterator it(parent, ec); !ec && it != std::filesystem::directory_iterator(); it.increment(ec))
+        {
+            if (ec)
+                break;
+            if (it->is_directory(ec) || ec)
+            {
+                ec.clear();
+                continue;
+            }
+            std::filesystem::path p = it->path();
+            std::string ext = p.extension().string();
+            for (char& ch : ext) ch = std::tolower(static_cast<unsigned char>(ch));
+            if (ext == ".jpg" || ext == ".jpeg" || ext == ".json")
+            {
+                files.push_back(p);
+            }
+            ec.clear();
+        }
+
+        if (files.size() < 2)
+            return "U";
+
+        std::sort(files.begin(), files.end(), [](const std::filesystem::path& a, const std::filesystem::path& b) {
+            return a.filename().string() < b.filename().string();
+        });
+
+        long long first_mileage = -9999999999LL;
+        long long last_mileage = -9999999999LL;
+        bool found_first = false;
+
+        for (const auto& file : files)
+        {
+            long long m = parse_location_mm_from_name(file.filename().string(), -9999999999LL);
+            if (m != -9999999999LL)
+            {
+                if (!found_first)
+                {
+                    first_mileage = m;
+                    found_first = true;
+                }
+                last_mileage = m;
+            }
+        }
+
+        if (found_first && first_mileage != last_mileage)
+        {
+            return (last_mileage > first_mileage) ? "U" : "D";
+        }
+
+        return "U";
     }
 
     std::string defect_serial_from_image_name(const std::string& image_name)

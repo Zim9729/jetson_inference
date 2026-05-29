@@ -214,14 +214,14 @@ void test_both_mode_writes_image_and_single_defect_jsons()
     write_results(json, image_json, "both", "json", 3, 0, cv::Mat(), make_flaws(), defect_root);
 
     require(fs::exists(image_json), "both mode should write image result json");
-    require(fs::exists(defect_root / "fault_03187188_0.json"), "both mode should write first defect json");
-    require(fs::exists(defect_root / "fault_03187188_1.json"), "both mode should write second defect json");
-    require(!fs::exists(defect_root / "fault_03187188_0.csv"), "default format should not write defect csv");
+    require(fs::exists(defect_root / "fault_187188_0.json"), "both mode should write first defect json");
+    require(fs::exists(defect_root / "fault_187188_1.json"), "both mode should write second defect json");
+    require(!fs::exists(defect_root / "fault_187188_0.csv"), "default format should not write defect csv");
 
     nlohmann::json image_result = read_json_file(image_json);
     require(image_result["defects"].size() == 2, "image result should contain both defects");
 
-    nlohmann::json one_defect = read_json_file(defect_root / "fault_03187188_0.json");
+    nlohmann::json one_defect = read_json_file(defect_root / "fault_187188_0.json");
     require(one_defect.contains("defect"), "single defect json should contain defect object");
     require(!one_defect.contains("defects"), "single defect json should not contain defects array");
     require(one_defect["defect"]["id"] == "0", "single defect json should use global defect serial as id");
@@ -248,7 +248,7 @@ void test_defect_mode_skips_image_json_and_removes_stale_files()
     std::ofstream stale_image(defect_root / "00018_-30405500_1776575709040_99.jpg");
     stale_image << "stale";
     stale_image.close();
-    std::ofstream stale_zip(defect_root / "fault_03187188_1776575709040_99.zip");
+    std::ofstream stale_zip(defect_root / "fault_187188_1776575709040_99.zip");
     stale_zip << "stale";
     stale_zip.close();
 
@@ -256,15 +256,15 @@ void test_defect_mode_skips_image_json_and_removes_stale_files()
     write_results(json, image_json, "defect", "json", 3, 0, cv::Mat(), make_flaws(), defect_root);
 
     require(!fs::exists(image_json), "defect mode should not write image result json");
-    require(fs::exists(defect_root / "fault_03187188_0.json"), "defect mode should write first defect json");
-    require(fs::exists(defect_root / "fault_03187188_1.json"), "defect mode should write second defect json");
-    require(!fs::exists(defect_root / "fault_03187188_0.csv"), "default json format should not write first defect csv");
-    require(!fs::exists(defect_root / "fault_03187188_1.csv"), "default json format should not write second defect csv");
-    require(!fs::exists(defect_root / "fault_03187188_0.jpg"), "defect image switch off should not write defect jpg");
+    require(fs::exists(defect_root / "fault_187188_0.json"), "defect mode should write first defect json");
+    require(fs::exists(defect_root / "fault_187188_1.json"), "defect mode should write second defect json");
+    require(!fs::exists(defect_root / "fault_187188_0.csv"), "default json format should not write first defect csv");
+    require(!fs::exists(defect_root / "fault_187188_1.csv"), "default json format should not write second defect csv");
+    require(!fs::exists(defect_root / "fault_187188_0.jpg"), "defect image switch off should not write defect jpg");
     require(!fs::exists(defect_root / "00018_-30405500_1776575709040_99.json"), "defect mode should remove stale defect jsons for the same image");
     require(!fs::exists(defect_root / "00018_-30405500_1776575709040_99.csv"), "defect mode should remove stale defect csvs for the same image");
     require(!fs::exists(defect_root / "00018_-30405500_1776575709040_99.jpg"), "defect mode should remove stale defect images for the same image");
-    require(!fs::exists(defect_root / "fault_03187188_1776575709040_99.zip"), "defect mode should remove stale defect zips for the same image");
+    require(!fs::exists(defect_root / "fault_187188_1776575709040_99.zip"), "defect mode should remove stale defect zips for the same image");
 }
 
 void test_defect_mode_csv_format_writes_single_defect_csvs()
@@ -280,26 +280,26 @@ void test_defect_mode_csv_format_writes_single_defect_csvs()
     write_results(json, image_json, "defect", "csv", 3, 0, cv::Mat(), make_flaws(), defect_root);
 
     require(!fs::exists(image_json), "defect csv format should not write image result json");
-    require(!fs::exists(defect_root / "fault_03187188_0.json"), "csv format should not write first defect json");
-    require(!fs::exists(defect_root / "fault_03187188_1.json"), "csv format should not write second defect json");
-    require(!fs::exists(defect_root / "fault_03187188_0.csv"), "csv format should not leave first defect csv on disk");
-    require(!fs::exists(defect_root / "fault_03187188_1.csv"), "csv format should not leave second defect csv on disk");
-    require(fs::exists(defect_root / "fault_03187188_0.zip"), "csv format should write first defect zip");
-    require(fs::exists(defect_root / "fault_03187188_1.zip"), "csv format should write second defect zip");
-    require_zip_contains_entry(defect_root / "fault_03187188_0.zip", "fault_03187188_0.csv");
-    require_zip_contains_entry(defect_root / "fault_03187188_1.zip", "fault_03187188_1.csv");
+    require(!fs::exists(defect_root / "fault_187188_0.json"), "csv format should not write first defect json");
+    require(!fs::exists(defect_root / "fault_187188_1.json"), "csv format should not write second defect json");
+    require(!fs::exists(defect_root / "fault_187188_0.csv"), "csv format should not leave first defect csv on disk");
+    require(!fs::exists(defect_root / "fault_187188_1.csv"), "csv format should not leave second defect csv on disk");
+    require(fs::exists(defect_root / "fault_187188_0.zip"), "csv format should write first defect zip");
+    require(fs::exists(defect_root / "fault_187188_1.zip"), "csv format should write second defect zip");
+    require_zip_contains_entry(defect_root / "fault_187188_0.zip", "fault_187188_0.csv");
+    require_zip_contains_entry(defect_root / "fault_187188_1.zip", "fault_187188_1.csv");
 
-    const std::string first_csv = extract_zip_entry_text(defect_root / "fault_03187188_0.zip", "fault_03187188_0.csv");
-    const std::string second_csv = extract_zip_entry_text(defect_root / "fault_03187188_1.zip", "fault_03187188_1.csv");
+    const std::string first_csv = extract_zip_entry_text(defect_root / "fault_187188_0.zip", "fault_187188_0.csv");
+    const std::string second_csv = extract_zip_entry_text(defect_root / "fault_187188_1.zip", "fault_187188_1.csv");
     require(first_csv.find("ID,FAULTINF_BASLIB_INDEX,FAULTINF_BASLIB_IMGNAME,FAULTINF_IMGNAME,FAULTINF_PART_IMGNAME,FAULTINF_IMGPATH") != std::string::npos, "defect csv should contain new header");
     require(first_csv.find("00018_-30405500_1776575709040.jpg") != std::string::npos, "defect csv should contain image name");
     require(first_csv.find("0,18") != std::string::npos, "first defect csv should write global serial to ID field");
-    require(first_csv.find("fault_03187188_0.jpg") != std::string::npos, "first defect csv should write exported image name to FAULTINF_IMGNAME");
-    require(first_csv.find(",3,03187188,E1,unknown,1,弹条,16,10,20,30,40,") != std::string::npos, "first defect csv should contain fixed route, train and bbox fields");
+    require(first_csv.find("fault_187188_0.jpg") != std::string::npos, "first defect csv should write exported image name to FAULTINF_IMGNAME");
+    require(first_csv.find(",3,187188,E1,U,1,弹条,16,10,20,30,40,") != std::string::npos, "first defect csv should contain fixed route, train and bbox fields");
     require(first_csv.find(",-30405500,1,16,1,00018_-30405500_1776575709040.jpg") != std::string::npos, "first defect csv should map 弹条 object id to 1");
     require(second_csv.find("1,18") != std::string::npos, "second defect csv should write global serial to ID field");
-    require(second_csv.find("fault_03187188_1.jpg") != std::string::npos, "second defect csv should write exported image name to FAULTINF_IMGNAME");
-    require(second_csv.find(",3,03187188,E1,unknown,1,螺母,48,50,60,70,80,") != std::string::npos, "second defect csv should contain fixed route, train and bbox fields");
+    require(second_csv.find("fault_187188_1.jpg") != std::string::npos, "second defect csv should write exported image name to FAULTINF_IMGNAME");
+    require(second_csv.find(",3,187188,E1,U,1,螺母,48,50,60,70,80,") != std::string::npos, "second defect csv should contain fixed route, train and bbox fields");
     require(second_csv.find(",-30405500,2,48,1,00018_-30405500_1776575709040.jpg") != std::string::npos, "second defect csv should map 螺母 object id to 2");
 }
 
@@ -315,10 +315,10 @@ void test_defect_mode_both_format_writes_single_defect_jsons_and_csvs()
     Cjson json;
     write_results(json, image_json, "defect", "both", 3, 0, cv::Mat(), make_flaws(), defect_root);
 
-    require(fs::exists(defect_root / "fault_03187188_0.json"), "both format should write first defect json");
-    require(!fs::exists(defect_root / "fault_03187188_0.csv"), "both format should not leave first defect csv on disk");
-    require(fs::exists(defect_root / "fault_03187188_0.zip"), "both format should write first defect zip");
-    require_zip_contains_entry(defect_root / "fault_03187188_0.zip", "fault_03187188_0.csv");
+    require(fs::exists(defect_root / "fault_187188_0.json"), "both format should write first defect json");
+    require(!fs::exists(defect_root / "fault_187188_0.csv"), "both format should not leave first defect csv on disk");
+    require(fs::exists(defect_root / "fault_187188_0.zip"), "both format should write first defect zip");
+    require_zip_contains_entry(defect_root / "fault_187188_0.zip", "fault_187188_0.csv");
 }
 
 void test_image_mode_skips_single_defect_jsons()
@@ -348,12 +348,12 @@ void test_defect_image_switch_writes_scaled_single_defect_image()
     Cjson json;
     write_results(json, image_json, "defect", "json", 6, 1, make_source_image(), make_image_flaws(), defect_root);
 
-    const fs::path defect_zip_path = defect_root / "fault_03187188_0.zip";
-    require(!fs::exists(defect_root / "fault_03187188_0.jpg"), "defectImage switch should not leave jpg on disk");
+    const fs::path defect_zip_path = defect_root / "fault_187188_0.zip";
+    require(!fs::exists(defect_root / "fault_187188_0.jpg"), "defectImage switch should not leave jpg on disk");
     require(fs::exists(defect_zip_path), "defectImage switch should write one zip per defect");
-    require_zip_contains_entry(defect_zip_path, "fault_03187188_0.jpg");
+    require_zip_contains_entry(defect_zip_path, "fault_187188_0.jpg");
 
-    const std::vector<unsigned char> defect_image_bytes = extract_zip_entry_bytes(defect_zip_path, "fault_03187188_0.jpg");
+    const std::vector<unsigned char> defect_image_bytes = extract_zip_entry_bytes(defect_zip_path, "fault_187188_0.jpg");
     cv::Mat defect_image = cv::imdecode(defect_image_bytes, cv::IMREAD_COLOR);
     require(!defect_image.empty(), "written defect image should be readable");
     require(defect_image.cols == 80, "defect image width should keep full image width");
@@ -374,8 +374,8 @@ void test_defect_serial_increments_across_images_same_day()
     write_results(json, root / "E1" / "json" / "00018_-30405500_1776575709040_result.json", "defect", "csv", 3, 0, cv::Mat(), one_flaw, defect_root);
     write_results(json, root / "E2" / "json" / "00019_-30406500_1776575709041_result.json", "defect", "csv", 3, 0, cv::Mat(), one_flaw, defect_root);
 
-    require(fs::exists(defect_root / "fault_03187188_0.zip"), "first image should allocate defect serial 0");
-    require(fs::exists(defect_root / "fault_03187188_1.zip"), "second image should allocate next defect serial 1");
+    require(fs::exists(defect_root / "fault_187188_0.zip"), "first image should allocate defect serial 0");
+    require(fs::exists(defect_root / "fault_187188_1.zip"), "second image should allocate next defect serial 1");
 }
 
 } // namespace

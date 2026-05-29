@@ -73,7 +73,7 @@
 				<xlbh_2 GuiDao_XLBH_type="16" DaoCha_XLBH_type="16" XLBH_name="弹条缺失"/>
 				<xlbh_4 GuiDao_XLBH_type="16" DaoCha_XLBH_type="16" XLBH_name="弹条缺失"/>
 				<xlbh_8 GuiDao_XLBH_type="48" DaoCha_XLBH_type="48" XLBH_name="地脚螺栓缺失"/>
-				<xlbh_7 GuiDao_XLBH_type="XLBH-111" DaoCha_XLBH_type="XLBH-308" XLBH_name="轨距块缺失"/>
+				<xlbh_7 GuiDao_XLBH_type="XLBH-000" DaoCha_XLBH_type="XLBH-000" XLBH_name="轨距块缺失"/>
 				<xlbh_9 GuiDao_XLBH_type="48" DaoCha_XLBH_type="48" XLBH_name="护轨螺栓缺失"/>
 				<xlbh_10 GuiDao_XLBH_type="50" DaoCha_XLBH_type="50" XLBH_name="垫片歪斜"/>
 			</XLBHs>
@@ -117,7 +117,7 @@
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_0 GuiDao_XLBH_type="2" DaoCha_XLBH_type="2" XLBH_name="顶面擦伤"/>
 				<xlbh_1 GuiDao_XLBH_type="3" DaoCha_XLBH_type="3" XLBH_name="轨面连续掉块"/>
-				<xlbh_2 GuiDao_XLBH_type="XLBH-493" DaoCha_XLBH_type="XLBH-494" XLBH_name="表面波磨"/>
+				<xlbh_2 GuiDao_XLBH_type="XLBH-000" DaoCha_XLBH_type="XLBH-000" XLBH_name="表面波磨"/>
 			</XLBHs>
 		</trtInfo>
 	</element0>
@@ -177,13 +177,13 @@
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_0 GuiDao_XLBH_type="1024" DaoCha_XLBH_type="1024" XLBH_name="道床板裂纹"/>
 				<xlbh_1 GuiDao_XLBH_type="51" DaoCha_XLBH_type="51" XLBH_name="道床翻浆冒泥"/>
-				<xlbh_5 GuiDao_XLBH_type="XLBH-340" DaoCha_XLBH_type="XLBH-255" XLBH_name="道床积水"/>
+				<xlbh_5 GuiDao_XLBH_type="XLBH-000" DaoCha_XLBH_type="XLBH-000" XLBH_name="道床积水"/>
 			</XLBHs>
 		</trtInfo>
 		<yanzhong_fjmn padding="0" areaID="1200" partID="1201" flawID="31" name="严重翻浆冒泥(带轨枕)" w="30" h="10" fp="50" mergeBox="1"/>
 		<yanzhong_fjmn_XLBH GuiDao_XLBH_type="51" DaoCha_XLBH_type="51" XLBH_name="严重翻浆冒泥(带轨枕)"/>   <!--轨道编码XLBH-->
 		<yanzhong_js padding="0" areaID="1200" partID="1201" flawID="22" name="严重积水(带轨枕)" w="30" h="10" fp="40" mergeBox="1"/>
-		<yanzhong_js_XLBH GuiDao_XLBH_type="XLBH-542" DaoCha_XLBH_type="XLBH-543" XLBH_name="严重积水(带轨枕)"/>   <!--轨道编码XLBH-->	
+		<yanzhong_js_XLBH GuiDao_XLBH_type="XLBH-000" DaoCha_XLBH_type="XLBH-000" XLBH_name="严重积水(带轨枕)"/>   <!--轨道编码XLBH-->	
 	</element2>
 </root>
 
