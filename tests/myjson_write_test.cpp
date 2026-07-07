@@ -378,6 +378,24 @@ void test_defect_serial_increments_across_images_same_day()
     require(fs::exists(defect_root / "fault_187188_1.zip"), "second image should allocate next defect serial 1");
 }
 
+void test_defect_mode_csv_format_with_new_camera_folders()
+{
+    const fs::path root = fs::temp_directory_path() / "proj2_myjson_write_test_new_camera";
+    std::error_code ec;
+    fs::remove_all(root, ec);
+    fs::create_directories(root / "L2" / "json");
+    const fs::path defect_root = default_defect_output_root(root);
+
+    const fs::path image_json = root / "L2" / "json" / "00018_-30405500_1776575709040_result.json";
+    Cjson json;
+    write_results(json, image_json, "defect", "csv", 3, 0, cv::Mat(), make_flaws(), defect_root);
+
+    require(fs::exists(defect_root / "fault_187188_0.zip"), "L2 csv format should write first defect zip");
+    const std::string first_csv = extract_zip_entry_text(defect_root / "fault_187188_0.zip", "fault_187188_0.csv");
+    require(first_csv.find(",3,187188,L,U,1,弹条,16,10,20,30,40,") != std::string::npos, "first defect csv should contain CAM_POSITION=L and RECOGNITION_NUM=1");
+    require(first_csv.find(",16,2,00018_-30405500_1776575709040.jpg") != std::string::npos, "first defect csv should contain CAM_NUM=2");
+}
+
 } // namespace
 
 int main()
@@ -391,6 +409,7 @@ int main()
         test_image_mode_skips_single_defect_jsons();
         test_defect_image_switch_writes_scaled_single_defect_image();
         test_defect_serial_increments_across_images_same_day();
+        test_defect_mode_csv_format_with_new_camera_folders();
     }
     catch (const std::exception& e)
     {

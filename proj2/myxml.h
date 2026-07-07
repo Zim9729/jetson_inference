@@ -91,6 +91,9 @@ public:
         if (save_result_json_format != "json" && save_result_json_format != "csv" && save_result_json_format != "both")
             save_result_json_format = "json";
         isave_result_defect_image = pugi::xml_node(doc.child("root").child("saveResultJson")).attribute("defectImage").as_int(0);
+        int iconfig_count_fastening = pugi::xml_node(doc.child("root").child("saveResultJson")).attribute("count_fastening").as_int(2);
+        if (iconfig_count_fastening <= 0)
+            iconfig_count_fastening = 2;
         combine_2koujian = pugi::xml_node(doc.child("root").child("combine_2koujian")).attribute("combine_2koujian").as_int();
         if (combine_2koujian == 1)
         {
@@ -124,6 +127,7 @@ public:
             ini_param.saveResult_json_mode = save_result_json_mode;
             ini_param.saveResult_json_format = save_result_json_format;
             ini_param.saveResult_defect_image = isave_result_defect_image;
+            ini_param.count_fastening = iconfig_count_fastening;
             ini_param.imgInsize = in_size;
             ini_param.imgOutsize = out_size;
             ini_param.debug_folder = debug_folder;

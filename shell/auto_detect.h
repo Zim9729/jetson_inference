@@ -113,7 +113,7 @@ inline std::vector<fs::path> find_today_batch_directories(const fs::path& total_
 
 inline std::vector<fs::path> collect_batch_files(const fs::path& batch_dir, const std::string& json0_jpg1)
 {
-    static const std::array<const char*, 4> kFolders = {"E1", "E2", "E3", "E4"};
+    static const std::array<const char*, 8> kFolders = {"L1", "L2", "R1", "R2", "E1", "E2", "E3", "E4"};
     std::vector<fs::path> files;
 
     for (const char* folder_name : kFolders)

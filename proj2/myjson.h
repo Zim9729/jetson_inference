@@ -463,13 +463,14 @@ public:
         }
     }
 
-    cv::Mat render_one_defect_image(const cv::Mat& image, flawOutInfo flaw, int count_fastening)
+    cv::Mat render_one_defect_image(const cv::Mat& image, flawOutInfo flaw, int count_fastening, int expected_count_fastening = 2)
     {
         if (image.empty())
             return cv::Mat();
 
-        int safe_count = count_fastening > 0 ? count_fastening : 3;
-        double scale_y = safe_count / 3.0;
+        int safe_expected = expected_count_fastening > 0 ? expected_count_fastening : 2;
+        int safe_count = count_fastening > 0 ? count_fastening : safe_expected;
+        double scale_y = safe_count / (double)safe_expected;
         cv::Mat scaled = image;
         if (scale_y != 1.0)
             cv::resize(image, scaled, cv::Size(image.cols, (std::max)(1, (int)std::round(image.rows * scale_y))));
@@ -496,18 +497,18 @@ public:
         return full;
     }
 
-    bool encode_one_defect_image_bytes(std::vector<unsigned char>& bytes, const cv::Mat& image, flawOutInfo flaw, int count_fastening)
+    bool encode_one_defect_image_bytes(std::vector<unsigned char>& bytes, const cv::Mat& image, flawOutInfo flaw, int count_fastening, int expected_count_fastening = 2)
     {
-        const cv::Mat rendered = render_one_defect_image(image, flaw, count_fastening);
+        const cv::Mat rendered = render_one_defect_image(image, flaw, count_fastening, expected_count_fastening);
         if (rendered.empty())
             return false;
 
         return cv::imencode(".jpg", rendered, bytes);
     }
 
-    void write_one_defect_image(const std::filesystem::path& outpath, const cv::Mat& image, flawOutInfo flaw, int count_fastening)
+    void write_one_defect_image(const std::filesystem::path& outpath, const cv::Mat& image, flawOutInfo flaw, int count_fastening, int expected_count_fastening = 2)
     {
-        const cv::Mat full = render_one_defect_image(image, flaw, count_fastening);
+        const cv::Mat full = render_one_defect_image(image, flaw, count_fastening, expected_count_fastening);
         if (full.empty())
             return;
 
@@ -520,7 +521,8 @@ public:
                                 std::string saveResult_json_format,
                                 int saveResult_defect_image,
                                 const cv::Mat& defect_image_src,
-                                const std::string& defect_output_root)
+                                const std::string& defect_output_root,
+                                int expected_count_fastening = 2)
     {
         if (Outfilename.length() <= 3)
             return;
@@ -586,7 +588,7 @@ public:
             if (saveResult_defect_image >= 1)
             {
                 std::vector<unsigned char> image_bytes;
-                if (encode_one_defect_image_bytes(image_bytes, defect_image_src, vResults[i], jsonData.value("count_fastening", 3)))
+                if (encode_one_defect_image_bytes(image_bytes, defect_image_src, vResults[i], jsonData.value("count_fastening", expected_count_fastening), expected_count_fastening))
                 {
                     zip_archive_entry entry;
                     entry.name = defect_export_stem + ".jpg";
@@ -620,7 +622,8 @@ public:
                            std::string saveResult_json_format = "json",
                            int saveResult_defect_image = 0,
                            const cv::Mat& defect_image_src = cv::Mat(),
-                           const std::string& defect_output_root = "")
+                           const std::string& defect_output_root = "",
+                           int expected_count_fastening = 2)
     {
         // 解析JSON字符串
         try {
@@ -631,7 +634,7 @@ public:
             //加入检测结果
             jsonData["image_width"] = image_width;
             jsonData["image_height"] = image_height;
-            jsonData["count_fastening"] = iCount_Koujian > 0 ? iCount_Koujian : 3;
+            jsonData["count_fastening"] = iCount_Koujian > 0 ? iCount_Koujian : expected_count_fastening;
             jsonData["mileage"] = mileage;
             jsonData["up_mileage"] = up_mileage;
             jsonData["down_mileage"] = down_mileage;
@@ -656,7 +659,7 @@ public:
             if (should_save_defect_json(saveResult_json, saveResult_json_mode)) {
                 if (saveResult_json_format != "json" && saveResult_json_format != "csv" && saveResult_json_format != "both")
                     saveResult_json_format = "json";
-                write_one_defect_jsons(jsonData, Outfilename, vResults, saveResult_json_format, saveResult_defect_image, defect_image_src, defect_output_root);
+                write_one_defect_jsons(jsonData, Outfilename, vResults, saveResult_json_format, saveResult_defect_image, defect_image_src, defect_output_root, expected_count_fastening);
             }
             return 1;
 
@@ -770,21 +773,47 @@ public:
         return std::filesystem::u8path(path_text.c_str()).filename().string();
     }
 
-    std::string camera_position_from_path(const std::string& path_text)
+    std::string get_raw_camera_dir_from_path(const std::string& path_text)
     {
         if (path_text.empty())
             return "";
-
         const std::filesystem::path path = std::filesystem::u8path(path_text.c_str());
         const std::string camera_dir = path.parent_path().filename().string();
-        if (camera_dir.size() >= 2 && (camera_dir[0] == 'E' || camera_dir[0] == 'e'))
-            return camera_dir;
+        if (camera_dir.size() >= 2)
+        {
+            char first = camera_dir[0];
+            if (first == 'E' || first == 'e' || first == 'L' || first == 'l' || first == 'R' || first == 'r')
+            {
+                return camera_dir;
+            }
+        }
         return "";
+    }
+
+    std::string camera_position_from_path(const std::string& path_text)
+    {
+        const std::string camera_dir = get_raw_camera_dir_from_path(path_text);
+        if (camera_dir.empty())
+            return "";
+
+        char first = camera_dir[0];
+        if (first == 'L' || first == 'l')
+            return "L";
+        if (first == 'R' || first == 'r')
+            return "R";
+
+        if (first == 'e')
+        {
+            std::string normalized = camera_dir;
+            normalized[0] = 'E';
+            return normalized;
+        }
+        return camera_dir;
     }
 
     int parse_camera_num_from_path(const std::string& path_text, int default_value)
     {
-        const std::string camera_dir = camera_position_from_path(path_text);
+        const std::string camera_dir = get_raw_camera_dir_from_path(path_text);
         if (camera_dir.size() < 2)
             return default_value;
         return text_to_int_or_default(camera_dir.substr(1), default_value);

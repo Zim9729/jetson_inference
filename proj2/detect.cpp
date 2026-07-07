@@ -1197,7 +1197,8 @@ int Cdetect::in_process(char* file_Data, std::string& OutData,std::string& sOutJ
                 m_config_param.saveResult_json_format,
                 m_config_param.saveResult_defect_image,
                 param.img,
-                resolve_defect_output_root(param.jpgpath));
+                resolve_defect_output_root(param.jpgpath),
+                m_config_param.count_fastening);
             const auto perf_save_json_end = std::chrono::steady_clock::now();
             perf::record_event("stage", "detect", "save_json",
                 std::chrono::duration_cast<std::chrono::milliseconds>(perf_save_json_end - perf_save_json_start).count(),

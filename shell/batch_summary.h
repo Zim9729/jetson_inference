@@ -406,7 +406,7 @@ inline bool write_defects_summary(const fs::path& batch_dir)
         return false;
     }
 
-    static const std::array<const char*, 4> kFolders = {"E1", "E2", "E3", "E4"};
+    static const std::array<const char*, 8> kFolders = {"L1", "L2", "R1", "R2", "E1", "E2", "E3", "E4"};
     nlohmann::json summary = nlohmann::json::array();
     std::unordered_set<std::string> image_result_paths;
 
