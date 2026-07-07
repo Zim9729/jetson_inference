@@ -555,8 +555,23 @@ std::string Cdetect::resolve_defect_output_root(const std::string& image_path) c
             export_root = fs::u8path(m_parent.c_str());
     }
 
-    const std::string effective_run_date = m_auto_detect_run_date.empty() ? current_date_text() : m_auto_detect_run_date;
-    const fs::path defect_root = export_root / "fault" / (effective_run_date + "_fault");
+    std::string trip_folder_name;
+    {
+        std::error_code rel_ec;
+        const fs::path relative_path = fs::relative(image_fs_path, export_root, rel_ec);
+        if (!rel_ec && !relative_path.empty())
+        {
+            auto it = relative_path.begin();
+            if (it != relative_path.end())
+                trip_folder_name = it->string();
+        }
+    }
+
+    std::string effective_trip = trip_folder_name;
+    if (effective_trip.empty())
+        effective_trip = m_auto_detect_run_date.empty() ? current_date_text() : m_auto_detect_run_date;
+
+    const fs::path defect_root = export_root / "fault" / effective_trip;
     std::error_code ec;
     fs::create_directories(defect_root, ec);
     if (ec)

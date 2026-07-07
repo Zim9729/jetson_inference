@@ -158,7 +158,7 @@ cv::Mat make_source_image()
 
 fs::path default_defect_output_root(const fs::path& root)
 {
-    return root / "fault" / "20260518_fault";
+    return root / "fault" / "20260518120000";
 }
 
 void write_results(Cjson& json,
@@ -396,6 +396,33 @@ void test_defect_mode_csv_format_with_new_camera_folders()
     require(first_csv.find(",16,2,00018_-30405500_1776575709040.jpg") != std::string::npos, "first defect csv should contain CAM_NUM=2");
 }
 
+void test_generate_time_uses_filename_timestamp()
+{
+    const fs::path root = fs::temp_directory_path() / "proj2_myjson_write_test_generate_time";
+    std::error_code ec;
+    fs::remove_all(root, ec);
+    fs::create_directories(root / "E1" / "json");
+    const fs::path defect_root = default_defect_output_root(root);
+
+    const fs::path image_json = root / "E1" / "json" / "00018_-30405500_1776575709040_result.json";
+    Cjson json;
+    write_results(json, image_json, "defect", "csv", 3, 0, cv::Mat(), make_flaws(), defect_root);
+
+    const std::string first_csv = extract_zip_entry_text(defect_root / "fault_187188_0.zip", "fault_187188_0.csv");
+
+    const long long timestamp_ms = 1776575709040LL;
+    std::time_t seconds = static_cast<std::time_t>(timestamp_ms / 1000);
+    std::tm local_tm = {};
+#if defined(_WIN32)
+    localtime_s(&local_tm, &seconds);
+#else
+    localtime_r(&seconds, &local_tm);
+#endif
+    char expected_date[16] = {0};
+    std::strftime(expected_date, sizeof(expected_date), "%Y/%m/%d", &local_tm);
+    require(first_csv.find(expected_date) != std::string::npos, "defect csv GENERATE_TIME should use timestamp from image filename");
+}
+
 } // namespace
 
 int main()
@@ -410,6 +437,7 @@ int main()
         test_defect_image_switch_writes_scaled_single_defect_image();
         test_defect_serial_increments_across_images_same_day();
         test_defect_mode_csv_format_with_new_camera_folders();
+        test_generate_time_uses_filename_timestamp();
     }
     catch (const std::exception& e)
     {

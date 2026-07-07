@@ -371,7 +371,7 @@ public:
             json_int_or_default(one, {"FAULTINF_TEMP_IMAGE_CHECK_COUNT", "tempImageCheckCount", "temp_image_check_count"}, 0),
             dete_km_mark,
             basis_km_mark,
-            json_string_or_default(one, {"FAULTINF_GENERATE_TIME", "generateTime", "generate_time"}, current_datetime_text()),
+            json_string_or_default(one, {"FAULTINF_GENERATE_TIME", "generateTime", "generate_time"}, generate_time_from_image_name(source_image_name)),
             location_mm,
             fault_object_id,
             type_id,
@@ -1183,6 +1183,39 @@ public:
         std::ostringstream out;
         out << std::put_time(&local_tm, "%Y/%m/%d %H:%M:%S");
         return out.str();
+    }
+
+    long long parse_timestamp_ms_from_name(const std::string& image_name, long long default_value)
+    {
+        const std::string stem = std::filesystem::u8path(image_name.c_str()).stem().string();
+        const std::size_t last_separator = stem.rfind('_');
+        if (last_separator == std::string::npos || last_separator + 1 >= stem.size())
+            return default_value;
+        const std::string timestamp_text = stem.substr(last_separator + 1);
+        return text_to_long_long_or_default(timestamp_text, default_value);
+    }
+
+    std::string timestamp_ms_to_datetime_text(long long timestamp_ms)
+    {
+        if (timestamp_ms <= 0)
+            return "";
+        std::time_t seconds = static_cast<std::time_t>(timestamp_ms / 1000);
+        std::tm local_tm = {};
+#ifdef _WIN32
+        localtime_s(&local_tm, &seconds);
+#else
+        localtime_r(&seconds, &local_tm);
+#endif
+        std::ostringstream out;
+        out << std::put_time(&local_tm, "%Y/%m/%d %H:%M:%S");
+        return out.str();
+    }
+
+    std::string generate_time_from_image_name(const std::string& image_name)
+    {
+        const long long timestamp_ms = parse_timestamp_ms_from_name(image_name, 0);
+        const std::string text = timestamp_ms_to_datetime_text(timestamp_ms);
+        return text.empty() ? current_datetime_text() : text;
     }
 
     int fault_object_id_from_name(const std::string& object_name, int default_value)
