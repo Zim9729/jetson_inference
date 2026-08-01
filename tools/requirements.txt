@@ -1,0 +1,5 @@
+# 人工补录缺陷工具依赖
+# 安装: pip install -r requirements.txt
+
+opencv-python>=4.5.0
+Pillow>=8.0.0
