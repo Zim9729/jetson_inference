@@ -42,7 +42,6 @@ __pycache__/
 *.pyc
 
 public/
-*.onnx
 *.engine
 data/*
 .obsidian/*
