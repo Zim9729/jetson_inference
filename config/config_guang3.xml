@@ -23,7 +23,7 @@
 				<name_4 areaID="1004" name="夹板接头区域" w="30" h="50" fp="50" mergeBox="0"/>
 				<name_5 areaID="1005" name="护轨螺栓区域" w="30" h="50" fp="50" mergeBox="0"/>
 				<name_6 areaID="1006" name="滑床板区域" w="30" h="50" fp="50" mergeBox="0"/>
-				<name_7 areaID="1007" name="道岔E型扣件区 域" w="30" h="50" fp="50" mergeBox="0"/>
+				<name_7 areaID="1007" name="道岔E型扣件区域" w="30" h="50" fp="50" mergeBox="0"/>
 				<name_8 areaID="1008" name="钢轨区域" w="30" h="50" fp="50" mergeBox="0"/>
 				<name_9 areaID="1009" name="间隔铁" w="30" h="50" fp="100" mergeBox="0"/>
 			</nodes>
@@ -89,8 +89,8 @@
 			<size w="640" h="640" depth="3"/>					
 			<nodes> 		
 				<name_0 padding="0" areaID="1007" partID="1300" flawID="11" name="0轨枕掉块" w="50" h="50" fp="50" mergeBox="1"/>
-				<name_1 padding="1" areaID="1700" partID="1801" flawID="31" name="1弹条偏移" w="10" h="10" fp="50" mergeBox="1"/>
-				<name_2 padding="1" areaID="1700" partID="1801" flawID="26" name="2预埋底座" w="30" h="30" fp="50" mergeBox="1"/>
+				<name_1 padding="0" areaID="1007" partID="1801" flawID="31" name="1弹条偏移" w="10" h="10" fp="50" mergeBox="1"/>
+				<name_2 padding="0" areaID="1007" partID="1801" flawID="26" name="2预埋底座" w="30" h="30" fp="50" mergeBox="1"/>
 				<name_3 padding="0" areaID="1007" partID="1300" flawID="20" name="3轨枕裂开" w="50" h="50" fp="50" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
