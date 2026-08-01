@@ -52,14 +52,14 @@ sudo mkdir -p /mnt/windows_share
 不要把密码直接写进 `fstab`，建议创建凭据文件：
 
 ```bash
-sudo nano /etc/smb-credentials
+sudo vim /etc/smb-credentials
 ```
 
 写入内容：
 
 ```ini
-username=administrator
-password=你的Windows密码
+username=rk
+password=123
 domain=WORKGROUP
 ```
 
@@ -80,7 +80,7 @@ sudo chmod 600 /etc/smb-credentials
 编辑 `/etc/fstab`：
 
 ```bash
-sudo nano /etc/fstab
+sudo vim  /etc/fstab
 ```
 
 追加下面这一行：
