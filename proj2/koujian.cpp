@@ -307,13 +307,13 @@ void Ckoujian::cal_koujian_weiyi(cv::Mat img,
     std::vector<std::pair<cv::Vec6f,nodeInfo>>vInlocs(vOutlocs);
     vOutlocs.clear();
 
-    std::vector<cv::Vec6f>vtantiao; 
-    std::vector<cv::Vec6f>vdizuo; 
+    std::vector<cv::Vec6f>vtantiao;
+    std::vector<cv::Vec6f>vdizuo;
     for(int i=0;i<(int)vInlocs.size();i++)
     {
-        if(vInlocs[i].second.partID == 1001 && vInlocs[i].second.flawID == 34) //弹条
+        if(vInlocs[i].second.partID == node_yiwei.tantiao_partID && vInlocs[i].second.flawID == node_yiwei.tantiao_flawID) //弹条
             vtantiao.push_back(vInlocs[i].first);
-        else if(vInlocs[i].second.partID == 1009 && vInlocs[i].second.flawID == 34) //预埋铁座
+        else if(vInlocs[i].second.partID == node_yiwei.dizuo_partID && vInlocs[i].second.flawID == node_yiwei.dizuo_flawID) //预埋铁座
             vdizuo.push_back(vInlocs[i].first);
         else
             vOutlocs.push_back(vInlocs[i]);

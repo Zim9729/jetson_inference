@@ -72,6 +72,11 @@ struct nodeInfo {
     int mergeBox = 0;
     float offsetw_factor = 1.0;
     float offseth_factor = 1.0;
+    //路径B(几何移位判定)输入类别标识: 从<E_yiwei>节点读取, 未配置时用默认值兼容旧配置
+    int tantiao_partID = 1001;  //弹条筛选partID
+    int tantiao_flawID = 34;    //弹条筛选flawID
+    int dizuo_partID = 1009;    //底座筛选partID
+    int dizuo_flawID = 34;      //底座筛选flawID
     XLBH_info xmbhs[2]; //[0]轨道及[1]道岔的对应缺陷编码
 };
 

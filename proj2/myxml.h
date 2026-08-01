@@ -227,6 +227,12 @@ public:
         tmp.offseth_factor = offseth_factor;
         tmp.type_name = type_name;
 
+        //路径B(几何移位判定)输入类别标识: 未配置时保留nodeInfo默认值(1001/34,1009/34)
+        tmp.tantiao_partID = node_name_.attribute("tantiao_partID").as_int(1001);
+        tmp.tantiao_flawID = node_name_.attribute("tantiao_flawID").as_int(34);
+        tmp.dizuo_partID = node_name_.attribute("dizuo_partID").as_int(1009);
+        tmp.dizuo_flawID = node_name_.attribute("dizuo_flawID").as_int(34);
+
         return true;
     }
 
