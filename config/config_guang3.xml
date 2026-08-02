@@ -167,7 +167,7 @@
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 			
 		<trtInfo version="10">
-			<path path="guang3/wlmq-dcqx-best_EfficientNMS_TRT-20260308.engine"/>
+			<path path="guang3/guang3-dcqx-best_EfficientNMS_TRT-20260802.engine"/>
 			<size w="1280" h="1280" depth="3"/>					
 			<nodes> 		
 				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="0道床裂缝" w="50" h="10" fp="50" mergeBox="1"/>
