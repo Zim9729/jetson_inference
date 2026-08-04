@@ -492,7 +492,7 @@ public:
         if (!area.empty())
             cv::rectangle(full, area, cv::Scalar(0, 255, 255), 2);
         if (!defect.empty())
-            cv::rectangle(full, defect, cv::Scalar(0, 0, 255), 2);
+            cv::rectangle(full, defect, cv::Scalar(0, 0, 255), 4);
 
         return full;
     }
