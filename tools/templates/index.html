@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缺陷压缩包分类工具</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: #f0f2f5; color: #333; padding: 20px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 24px; color: #1a1a1a; }
+
+    /* 输入区 */
+    .panel {
+      background: #fff; border-radius: 8px; padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #555; }
+    .input-row { display: flex; gap: 8px; }
+    .input-row input {
+      flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9;
+      border-radius: 4px; font-size: 14px;
+    }
+    .input-row input:focus { border-color: #4096ff; outline: none; }
+    .btn {
+      padding: 8px 20px; border: none; border-radius: 4px;
+      cursor: pointer; font-size: 14px; transition: all 0.2s;
+    }
+    .btn-primary { background: #1677ff; color: #fff; }
+    .btn-primary:hover { background: #4096ff; }
+    .btn-primary:disabled { background: #d9d9d9; cursor: not-allowed; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+
+    /* 浏览器弹窗 */
+    .browser-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%;
+      height: 100%; background: rgba(0,0,0,0.4); z-index: 1000;
+    }
+    .browser-overlay.active { display: flex; align-items: center; justify-content: center; }
+    .browser-dialog {
+      background: #fff; border-radius: 8px; width: 500px;
+      max-height: 70vh; display: flex; flex-direction: column;
+    }
+    .browser-header {
+      padding: 12px 16px; border-bottom: 1px solid #eee;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .browser-path { font-size: 13px; color: #666; word-break: break-all; }
+    .browser-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .browser-item {
+      padding: 8px 16px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .browser-item:hover { background: #f5f5f5; }
+    .browser-footer {
+      padding: 12px 16px; border-top: 1px solid #eee;
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+
+    /* 进度区 */
+    .progress-section { display: none; }
+    .progress-section.active { display: block; }
+    .progress-bar-wrap {
+      background: #f0f0f0; border-radius: 4px; height: 24px;
+      overflow: hidden; margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 100%; background: linear-gradient(90deg, #1677ff, #4096ff);
+      transition: width 0.3s; width: 0%;
+    }
+    .progress-text { text-align: center; font-size: 13px; color: #666; }
+    .current-file {
+      margin-top: 8px; font-size: 12px; color: #999;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* 结果区 */
+    .result-section { display: none; }
+    .result-section.active { display: block; }
+    .result-table { width: 100%; border-collapse: collapse; }
+    .result-table th, .result-table td {
+      padding: 10px 12px; text-align: left; border-bottom: 1px solid #f0f0f0;
+    }
+    .result-table th { background: #fafafa; font-weight: 600; color: #555; }
+    .result-table tr:hover { background: #fafafa; }
+    .folder-link { color: #1677ff; cursor: pointer; text-decoration: underline; }
+    .summary-row { font-weight: 600; background: #fafafa; }
+
+    /* 图片预览弹窗 */
+    .preview-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%;
+      height: 100%; background: rgba(0,0,0,0.8); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    .preview-overlay.active { display: flex; }
+    .preview-content { max-width: 90%; max-height: 90%; text-align: center; }
+    .preview-content img { max-width: 100%; max-height: 80vh; border-radius: 4px; }
+    .preview-nav { margin-top: 12px; display: flex; gap: 12px; justify-content: center; align-items: center; }
+    .preview-counter { color: #fff; font-size: 14px; }
+    .preview-close { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 28px; cursor: pointer; }
+
+    /* 状态标签 */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+    .badge-ok { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+    .badge-failed { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+    .badge-skipped { background: #fffbe6; color: #faad14; border: 1px solid #ffe58f; }
+
+    .error-msg {
+      display: none; background: #fff2f0; border: 1px solid #ffccc7;
+      border-radius: 4px; padding: 12px; color: #ff4d4f; margin-bottom: 16px;
+    }
+    .error-msg.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>缺陷压缩包分类工具</h1>
+
+  <!-- 输入区 -->
+  <div class="panel">
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="form-group">
+      <label>输入目录（包含 .zip 压缩包）</label>
+      <div class="input-row">
+        <input type="text" id="srcDir" placeholder="例如: E:\data\20260518\fault\20260518183516">
+        <button class="btn btn-secondary" onclick="openBrowser('srcDir')">浏览</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>输出目录（留空则默认为 输入目录_sorted）</label>
+      <div class="input-row">
+        <input type="text" id="outDir" placeholder="可选">
+        <button class="btn btn-secondary" onclick="openBrowser('outDir')">浏览</button>
+      </div>
+    </div>
+    <div style="text-align: center;">
+      <button class="btn btn-primary" id="startBtn" onclick="startSort()" style="padding: 10px 40px; font-size: 16px;">
+        开始分类
+      </button>
+    </div>
+  </div>
+
+  <!-- 进度区 -->
+  <div class="panel progress-section" id="progressSection">
+    <h3 style="margin-bottom: 16px;">处理进度</h3>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">准备中...</div>
+    <div class="current-file" id="currentFile"></div>
+  </div>
+
+  <!-- 结果区 -->
+  <div class="panel result-section" id="resultSection">
+    <h3 style="margin-bottom: 16px;">分类结果</h3>
+    <table class="result-table" id="resultTable">
+      <thead>
+        <tr><th>缺陷类型</th><th>图片数量</th><th>操作</th></tr>
+      </thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 目录浏览器 -->
+<div class="browser-overlay" id="browserOverlay">
+  <div class="browser-dialog">
+    <div class="browser-header">
+      <span class="browser-path" id="browserPath">选择目录</span>
+      <button class="btn btn-secondary" onclick="closeBrowser()">关闭</button>
+    </div>
+    <div class="browser-list" id="browserList"></div>
+    <div class="browser-footer">
+      <button class="btn btn-primary" onclick="confirmBrowser()">选择此目录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 图片预览 -->
+<div class="preview-overlay" id="previewOverlay">
+  <span class="preview-close" onclick="closePreview()">&times;</span>
+  <div class="preview-content">
+    <img id="previewImg" src="">
+    <div class="preview-nav">
+      <button class="btn btn-secondary" onclick="prevImage()">&larr; 上一个</button>
+      <span class="preview-counter" id="previewCounter"></span>
+      <button class="btn btn-secondary" onclick="nextImage()">下一个 &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let browserTarget = null;
+let browserHistory = [];
+let previewImages = [];
+let previewIndex = 0;
+
+// ===== 目录浏览器 =====
+async function openBrowser(target) {
+  browserTarget = target;
+  browserHistory = [];
+  const input = document.getElementById(target);
+  const currentPath = input.value || '';
+  if (currentPath) {
+    await loadBrowserDir(currentPath);
+  } else {
+    await loadBrowserDir('');
+  }
+  document.getElementById('browserOverlay').classList.add('active');
+}
+
+function closeBrowser() {
+  document.getElementById('browserOverlay').classList.remove('active');
+}
+
+async function loadBrowserDir(path) {
+  try {
+    const resp = await fetch('/api/browse', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({path: path})
+    });
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+    if (path) browserHistory.push(path);
+    document.getElementById('browserPath').textContent = data.current || path || '我的电脑';
+    const list = document.getElementById('browserList');
+    list.innerHTML = '';
+    if (browserHistory.length > 0) {
+      const item = document.createElement('div');
+      item.className = 'browser-item';
+      item.innerHTML = '📁 .. (返回上级)';
+      item.onclick = () => { browserHistory.pop(); const prev = browserHistory.pop() || ''; loadBrowserDir(prev); };
+      list.appendChild(item);
+    }
+    data.dirs.forEach(d => {
+      const name = d.split(/[\\/]/).filter(s => s).pop() || d;
+      const item = document.createElement('div');
+      item.className = 'browser-item';
+      item.innerHTML = '📁 ' + name;
+      item.onclick = () => loadBrowserDir(d);
+      list.appendChild(item);
+    });
+  } catch (e) { alert('加载失败: ' + e.message); }
+}
+
+function confirmBrowser() {
+  const path = document.getElementById('browserPath').textContent;
+  if (path && path !== '我的电脑') {
+    document.getElementById(browserTarget).value = path;
+  }
+  closeBrowser();
+}
+
+// ===== 开始分类 =====
+async function startSort() {
+  const srcDir = document.getElementById('srcDir').value.trim();
+  const outDir = document.getElementById('outDir').value.trim();
+  hideError();
+
+  if (!srcDir) { showError('请指定输入目录'); return; }
+
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.textContent = '处理中...';
+
+  try {
+    const resp = await fetch('/api/start', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({src_dir: srcDir, out_dir: outDir})
+    });
+    const data = await resp.json();
+    if (data.error) {
+      showError(data.error);
+      btn.disabled = false;
+      btn.textContent = '开始分类';
+      return;
+    }
+    if (data.out_dir) document.getElementById('outDir').value = data.out_dir;
+
+    document.getElementById('progressSection').classList.add('active');
+    document.getElementById('resultSection').classList.remove('active');
+    connectSSE();
+  } catch (e) {
+    showError('启动失败: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '开始分类';
+  }
+}
+
+// ===== SSE 实时进度 =====
+function connectSSE() {
+  const es = new EventSource('/api/events');
+
+  es.addEventListener('start', (e) => {
+    const data = JSON.parse(e.data);
+    document.getElementById('progressText').textContent = '开始处理...';
+  });
+
+  es.addEventListener('progress', (e) => {
+    const d = JSON.parse(e.data);
+    const pct = d.total > 0 ? (d.index / d.total * 100) : 0;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressText').textContent =
+      `${d.index} / ${d.total}  (${pct.toFixed(1)}%)  成功: ${d.succeeded}  失败: ${d.failed}`;
+    const statusBadge = d.status === 'ok' ? '✓' : d.status === 'failed' ? '✗' : '⊘';
+    document.getElementById('currentFile').textContent =
+      `${statusBadge} ${d.zip_name} → ${d.folder || '(跳过)'}`;
+  });
+
+  es.addEventListener('done', (e) => {
+    const d = JSON.parse(e.data);
+    es.close();
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('progressText').textContent =
+      `完成! 共 ${d.total} 个, 成功 ${d.succeeded} 个, 失败 ${d.failed} 个`;
+    showResults(d.stats);
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = '开始分类';
+  });
+
+  es.addEventListener('error', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      showError(d.message);
+    } catch (_) {
+      // SSE 连接错误, 静默重连
+    }
+  });
+}
+
+// ===== 结果展示 =====
+function showResults(stats) {
+  const body = document.getElementById('resultBody');
+  body.innerHTML = '';
+  let total = 0;
+  const entries = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+  entries.forEach(([folder, count]) => {
+    total += count;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="folder-link" onclick="openPreview('${folder}')">${folder}</td>` +
+                   `<td>${count}</td>` +
+                   `<td><button class="btn btn-secondary" onclick="openPreview('${folder}')">查看图片</button></td>`;
+    body.appendChild(tr);
+  });
+  const tr = document.createElement('tr');
+  tr.className = 'summary-row';
+  tr.innerHTML = `<td>合计</td><td>${total}</td><td></td>`;
+  body.appendChild(tr);
+  document.getElementById('resultSection').classList.add('active');
+}
+
+// ===== 图片预览 =====
+async function openPreview(folder) {
+  try {
+    const resp = await fetch(`/api/list_images/${encodeURIComponent(folder)}`);
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+    previewImages = data.images.map(name => ({folder, name}));
+    previewIndex = 0;
+    showPreviewImage();
+    document.getElementById('previewOverlay').classList.add('active');
+  } catch (e) { alert('加载失败: ' + e.message); }
+}
+
+function showPreviewImage() {
+  if (previewImages.length === 0) return;
+  const img = previewImages[previewIndex];
+  document.getElementById('previewImg').src =
+    `/api/preview/${encodeURIComponent(img.folder)}/${encodeURIComponent(img.name)}`;
+  document.getElementById('previewCounter').textContent =
+    `${previewIndex + 1} / ${previewImages.length}`;
+}
+
+function prevImage() {
+  if (previewImages.length === 0) return;
+  previewIndex = (previewIndex - 1 + previewImages.length) % previewImages.length;
+  showPreviewImage();
+}
+
+function nextImage() {
+  if (previewImages.length === 0) return;
+  previewIndex = (previewIndex + 1) % previewImages.length;
+  showPreviewImage();
+}
+
+function closePreview() {
+  document.getElementById('previewOverlay').classList.remove('active');
+}
+
+// ===== 工具函数 =====
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('active');
+}
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('active');
+}
+
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closePreview(); closeBrowser(); }
+  if (document.getElementById('previewOverlay').classList.contains('active')) {
+    if (e.key === 'ArrowLeft') prevImage();
+    if (e.key === 'ArrowRight') nextImage();
+  }
+});
+</script>
+</body>
+</html>

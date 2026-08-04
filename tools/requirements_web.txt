@@ -1,0 +1,5 @@
+# 缺陷压缩包分类工具 Web 版依赖
+# 安装: pip install -r requirements_web.txt
+
+flask>=3.0.0
+pyinstaller>=6.0.0
