@@ -137,10 +137,10 @@
 				<name_1 areaID="1200" partID="1200" flawID="16" name="地沟板" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_2 areaID="1200" partID="1200" flawID="16" name="水沟地漏" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_3 areaID="1200" partID="1200" flawID="16" name="水瓶" w="30" h="50" fp="50" mergeBox="1"/>
-				<name_4 areaID="1200" partID="1200" flawID="16" name="胶垫窜出" w="30" h="50" fp="50" mergeBox="1"/>
+				<name_4 areaID="1200" partID="1200" flawID="16" name="胶垫窜出" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_5 areaID="1200" partID="1200" flawID="16" name="零部件" w="30" h="50" fp="50" mergeBox="1"/>
 				<name_6 areaID="1200" partID="1200" flawID="16" name="完整胶垫" w="30" h="50" fp="50" mergeBox="1"/>
-				<name_7 areaID="1200" partID="1200" flawID="16" name="金属" w="30" h="50" fp="50" mergeBox="1"/>
+				<name_7 areaID="1200" partID="1200" flawID="16" name="金属" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_8 areaID="1200" partID="1200" flawID="16" name="钢筋" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_9 areaID="1200" partID="1200" flawID="16" name="传感器" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_10 areaID="1200" partID="1200" flawID="16" name="管片连接孔" w="30" h="50" fp="100" mergeBox="1"/>
