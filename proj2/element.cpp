@@ -405,36 +405,36 @@ void Celement::fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
     {
         cv::Vec6f flawloc = vin[i].first;
         nodeInfo node = vin[i].second;
-        int iin_shuigou = 0;
-        if (node.partID == 1200 && (node.flawID == 21|| node.flawID == 31 || node.flawID == 22)) //裂纹\冒泥\积水
+        int iin_drop = 0; //落在道床/水沟区域内则丢弃
+        if (node.partID == 1200 && (node.flawID == 20 || node.flawID == 31 || node.flawID == 22)) //裂缝\冒泥\积水
         {
             for (int k = 0;k < (int)vAreas.size();k++)
             {
-                if(vAreas[k].val[5] == 1401) //水沟区域
+                int areaPartID = (int)vAreas[k].val[5];
+                //道床区域(1201)或水沟区域(1401)：缺陷中心在内则丢弃
+                if ((areaPartID == 1201 || areaPartID == 1401) &&
+                    1 == mid_inside_vec6f(flawloc, vAreas[k]))
                 {
-                    if (1 == mid_inside_vec6f(flawloc, vAreas[k]))
-                    {
-                        iin_shuigou = 1;
-                        break;
-                    }
+                    iin_drop = 1;
+                    break;
                 }
-                if (m_node_fjmn.partID != 0 && node.flawID == 31 && vAreas[k].val[5] == 1301) //轨枕区域
+                if (m_node_fjmn.partID != 0 && node.flawID == 31 && areaPartID == 1301) //轨枕区域
                 {
                     if (true == isOverlapping(flawloc, vAreas[k]))
                     {
                         node = m_node_fjmn;
                     }
                 }
-                if (m_node_js.partID != 0 && node.flawID == 22 && vAreas[k].val[5] == 1301) //轨枕区域
+                if (m_node_js.partID != 0 && node.flawID == 22 && areaPartID == 1301) //轨枕区域
                 {
                     if (true == isOverlapping(flawloc, vAreas[k]))
                     {
                         node = m_node_js;
                     }
                 }
-            }           
+            }
         }
-        if (iin_shuigou == 0)
+        if (iin_drop == 0)
             vOutlocs.push_back(std::make_pair(flawloc, node));  //输出结果
     }
 }
