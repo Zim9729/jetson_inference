@@ -98,11 +98,9 @@ void Carea::showdebug(int itype,
 {
     if(img.rows<=0 || img.cols<=0)
         return;
-    if(m_debug_folder.length()<2)
-        return;
     cv::Mat show = img.clone();
-    std::string folder = m_debug_folder + "/" + m_elementname;
-    fs::create_directory(fs::path(folder));
+    std::string folder = make_debug_folder(m_elementname);
+    if(folder.empty()) return;
     cv::Scalar colors = cv::Scalar(0, 0, 255);
     int iSize = itype==0? (int)vResults0.size():(int)vResults1.size();
     for(int i=0;i<iSize;i++)

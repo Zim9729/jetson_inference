@@ -266,6 +266,18 @@ void CCommon::CreateDir(const std::string& directoryPath)
         fs::create_directory(fs::path(tmpDirPath));
 }
 
+std::string CCommon::make_debug_folder(const std::string& sub)
+{
+    if (m_debug_folder.length() < 2)
+        return std::string();
+    std::error_code ec;
+    fs::path p = fs::path(m_debug_folder) / sub;
+    fs::create_directories(p, ec);
+    if (ec)
+        return std::string();
+    return p.string();
+}
+
 void CCommon::get_padding_areaID(std::vector<nodeInfo>vnodes,
                         std::unordered_set<int>& hashPadding1,
                         std::string& sloginfo)

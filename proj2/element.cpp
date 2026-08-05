@@ -158,8 +158,8 @@ void Celement::showdebug(int areaiD,int index,cv::Mat img,std::string sname,
 
     int isave = 0;
     cv::Mat show = img.clone();
-    std::string folder = m_debug_folder + "/" + m_elementname + "/" + std::to_string(areaiD);;
-    fs::create_directories(fs::path(folder));
+    std::string folder = make_debug_folder(m_elementname + "/" + std::to_string(areaiD));
+    if(folder.empty()) return;
     cv::Scalar colors = cv::Scalar(0, 0, 255);
     for(int i=0;i<(int)vResults.size();i++)
     {

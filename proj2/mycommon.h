@@ -146,6 +146,9 @@ public:
                                 std::vector<cv::Vec6f>&vouts);
     bool checkValue(int arr[], int size, int value);
     void CreateDir(const std::string& directoryPath);
+    // 在 m_debug_folder 下创建子目录 sub，返回创建好的绝对路径；
+    // m_debug_folder 为空或创建失败时返回空串。永不抛异常。
+    std::string make_debug_folder(const std::string& sub);
     void get_padding_areaID(std::vector<nodeInfo>vnodes,
                             std::unordered_set<int>& hashPadding1,
                             std::string& sloginfo);

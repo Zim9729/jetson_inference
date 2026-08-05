@@ -121,8 +121,8 @@ void Ckoujian::showdebug(int areaiD,
 
     int isave = 0;
     cv::Mat show = img.clone();
-    std::string folder = m_debug_folder + "/" + m_elementname + "/" + std::to_string(areaiD);
-    fs::create_directories(fs::path(folder));
+    std::string folder = make_debug_folder(m_elementname + "/" + std::to_string(areaiD));
+    if(folder.empty()) return;
     cv::Scalar colors =  cv::Scalar(0, 0, 255);
     for(int i=0;i<(int)vResults.size();i++)
     {
@@ -233,10 +233,13 @@ void Ckoujian::showdebug_Eweiyi(cv::Mat img,
                                 float factorTh,
                                 int iyiwei)
 {
+    if(m_debug_folder.length()<2)
+        return;
+
     int isave = iyiwei;
     cv::Mat show = img.clone();
-    std::string folder = m_debug_folder + "/" + m_elementname + "/Eweiyi";
-    fs::create_directories(fs::path(folder));
+    std::string folder = make_debug_folder(m_elementname + "/Eweiyi");
+    if(folder.empty()) return;
     cv::Scalar red =  cv::Scalar(0, 0, 255);
     cv::Scalar green =  cv::Scalar(0, 255, 0);
     cv::Scalar yello =  cv::Scalar(0, 255, 255);
@@ -352,7 +355,7 @@ void Ckoujian::cal_koujian_weiyi(cv::Mat img,
         }
     }
 
-    //if(m_element1.debug >=1) //显示移位
+    if(m_element1.debug >=1) //显示移位
     {
         for(int i=0;i<(int)vshift.size();i++)
         {
