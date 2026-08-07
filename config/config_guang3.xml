@@ -85,7 +85,7 @@
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 	 
 		<trtInfo version="5">
-			<path path="guang3/G3-DETAIL-2-best-20260801-2.engine"/>
+			<path path="guang3/GUANG3-DETAIL-2-best-20260807.engine"/>
 			<size w="640" h="640" depth="3"/>					
 			<nodes> 		
 				<name_0 padding="0" areaID="1007" partID="1300" flawID="11" name="0轨枕掉块" w="50" h="50" fp="50" mergeBox="1"/>
@@ -99,7 +99,7 @@
 				<xlbh_3 GuiDao_XLBH_type="128" DaoCha_XLBH_type="128" XLBH_name="轨枕裂开"/>
 			</XLBHs>
 		</trtInfo>
-		<E_yiwei padding="0" areaID="1000-1001-1008" partID="1001" flawID="05" name="弹条移位" w="30" h="10" fp="50" mergeBox="0"
+		<E_yiwei padding="0" areaID="1000-1001-1008" partID="1001" flawID="05" name="弹条移位" w="30" h="10" fp="65" mergeBox="0"
 		         tantiao_partID="1801" tantiao_flawID="31" dizuo_partID="1801" dizuo_flawID="26"/>
 		<E_yiwei_XLBH GuiDao_XLBH_type="32" DaoCha_XLBH_type="32" XLBH_name="弹条移位"/> <!--轨道编码XLBH-->
 	</detail1>
@@ -167,7 +167,7 @@
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 			
 		<trtInfo version="10">
-			<path path="guang3/guang3-dcqx-best_EfficientNMS_TRT-20260802.engine"/>
+			<path path="guang3/guang3-dcqx-best_EfficientNMS_TRT-20260806.engine"/>
 			<size w="1280" h="1280" depth="3"/>					
 			<nodes> 		
 				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="0道床裂缝" w="50" h="10" fp="50" mergeBox="1"/>
