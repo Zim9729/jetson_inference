@@ -52,21 +52,22 @@
 		<cut Cnt="0" overlap="0"/>    	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 
 		<limitArea state="1" left="0" right="4096" top="20" bottom="2028"/>	 <!-- state:0不限制缺陷区域，1限制区域；--> 			
 		<trtInfo version="5">
-			<path path="guang3/guang3-detail-1-best-20250426.engine"/>
+			<path path="guang3/GUANG3-DETAIL-1-best-20260810.engine"/>
 			<size w="640" h="640" depth="3"/>						
 			<nodes>			
 				<name_0 padding="0" areaID="1000" partID="1001" flawID="02" name="E型弹条正常" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_1 padding="0" areaID="1000" partID="1001" flawID="04" name="E型弹条缺失" w="30" h="30" fp="50" mergeBox="1"/>
 				<name_2 padding="0" areaID="1002" partID="1001" flawID="04" name="W型弹条缺失" w="30" h="30" fp="50" mergeBox="1"/>
 				<name_3 padding="0" areaID="1003" partID="1001" flawID="02" name="先锋扣件铁丝正常" w="30" h="30" fp="100" mergeBox="1"/>
-				<name_4 padding="0" areaID="1003" partID="1001" flawID="04" name="先锋扣件铁丝缺失" w="30" h="30" fp="50" mergeBox="1"/>
+				<name_4 padding="0" areaID="1003" partID="1001" flawID="04" name="先锋扣件铁丝缺失" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_5 padding="0" areaID="1000" partID="1006" flawID="02" name="地脚螺栓2正常" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_6 padding="0" areaID="1000" partID="1006" flawID="02" name="地脚螺栓3正常" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_7 padding="0" areaID="1000" partID="1006" flawID="02" name="地脚螺栓正常" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_8 padding="0" areaID="1000" partID="1006" flawID="04" name="地脚螺栓缺失" w="10" h="10" fp="50" mergeBox="1"/>
 				<name_9 padding="0" areaID="1000" partID="1001" flawID="02" name="滑床板区域" w="30" h="30" fp="100" mergeBox="1"/>
-				<name_10 padding="0" areaID="1000" partID="1001" flawID="06" name="垫片位移" w="30" h="30" fp="50" mergeBox="1"/>
+				<name_10 padding="0" areaID="1000" partID="1001" flawID="06" name="垫片位移" w="40" h="30" fp="50" mergeBox="1"/>
 				<name_11 padding="0" areaID="1002" partID="1001" flawID="02" name="W型弹条正常" w="30" h="30" fp="100" mergeBox="1"/>			
+				<name_12 padding="0" areaID="1003" partID="1001" flawID="02" name="胶垫窜出" w="30" h="30" fp="100" mergeBox="1"/>			
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_1 GuiDao_XLBH_type="16" DaoCha_XLBH_type="16" XLBH_name="弹条缺失"/>
