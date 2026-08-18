@@ -512,7 +512,15 @@ function parseFaultCSV(text){
     const idx=headers.indexOf(field);
     return idx>=0&&idx<data.length?data[idx].trim():'';
   };
-  return {classCode:get('FAULTINF_CLASS'),object:get('FAULTINF_OBJECT'),imgName:get('FAULTINF_IMGNAME')};
+  return {
+    classCode:get('FAULTINF_CLASS'),
+    object:get('FAULTINF_OBJECT'),
+    imgName:get('FAULTINF_IMGNAME'),
+    posX:get('FAULTINF_POS_X'),
+    posY:get('FAULTINF_POS_Y'),
+    posW:get('FAULTINF_POS_W'),
+    posH:get('FAULTINF_POS_H'),
+  };
 }
 
 // Q7: 正确处理引号包裹的 CSV 字段
@@ -656,6 +664,144 @@ async function cleanDirContents(dirHandle){
 }
 
 // ============================================================
+// 图片裁剪 (聚焦缺陷区域)
+// ============================================================
+// zip 内 jpg 是 render_one_defect_image 渲染图, 画有:
+//   黄框 (扣件区域框, BGR 0,255,255 = RGB 255,255,0, 2px)
+//   红框 (缺陷框, BGR 0,0,255 = RGB 255,0,0, 4px)
+// 优先检测黄框边界裁剪(区域更大, 含缺陷上下文); 检测不到时回退 POS 框
+// 裁剪后 JPEG 输出质量
+const CROP_JPEG_QUALITY = 0.92;
+// 黄框裁剪时四周额外留的像素, 让黄框线本身也可见
+const YELLOW_BOX_PAD = 6;
+// 黄色像素判定阈值: JPEG 压缩后纯黄(255,255,0)会有偏差
+// BGR(0,255,255) -> R≈255, G≈255, B≈0; 要求 R/G 都高且接近, B 低
+function isYellowPixel(r,g,b){
+  return r>220 && g>220 && b<80 && Math.abs(r-g)<40;
+}
+
+function loadImageFromUrl(url){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=reject;
+    img.src=url;
+  });
+}
+
+// 扫描图片像素, 返回黄框边界 {x,y,w,h} 或 null
+// 黄框是 2px 矩形线条, 所有黄色像素的 bounding box 即黄框外边缘
+function detectYellowBox(bitmap){
+  const w=bitmap.width, h=bitmap.height;
+  if(w<=0||h<=0) return null;
+  const canvas=document.createElement('canvas');
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(bitmap,0,0);
+  const imgData=ctx.getImageData(0,0,w,h);
+  const data=imgData.data;
+  let minX=w, minY=h, maxX=-1, maxY=-1, count=0;
+  // data 是 RGBA 顺序: [r,g,b,a, r,g,b,a, ...]
+  for(let py=0; py<h; py++){
+    const rowOff=py*w*4;
+    for(let px=0; px<w; px++){
+      const off=rowOff+px*4;
+      if(isYellowPixel(data[off], data[off+1], data[off+2])){
+        if(px<minX) minX=px;
+        if(px>maxX) maxX=px;
+        if(py<minY) minY=py;
+        if(py>maxY) maxY=py;
+        count++;
+      }
+    }
+  }
+  // 黄框是 2px 线条, 像素数应远小于图片面积; 过少说明无黄框
+  if(count<20) return null;
+  const bw=maxX-minX+1, bh=maxY-minY+1;
+  // 边界框过小或覆盖过大面积(可能背景大面积黄色误检) -> 视为无效
+  if(bw<10 || bh<10) return null;
+  if(bw* bh > w*h*0.6) return null;
+  return {x:minX, y:minY, w:bw, h:bh};
+}
+
+// 裁剪图片: 优先用黄框(扣件区域), 检测不到时回退 POS 框(缺陷框+边距)
+// 坐标缺失/无效/越界/解码失败时返回原图
+// 用 createImageBitmap(imageOrientation:'none') 加载, 强制忽略 EXIF 方向
+async function cropImageToDefect(imgData,posX,posY,posW,posH){
+  const x=parseFloat(posX), y=parseFloat(posY),
+        w=parseFloat(posW), h=parseFloat(posH);
+  const hasPos = isFinite(x)&&isFinite(y)&&isFinite(w)&&isFinite(h)&&w>0&&h>0;
+  // 既无 POS 也无法检测黄框 -> 返回原图
+  if(!hasPos){
+    // 无 POS 时仍尝试检测黄框裁剪
+  }
+  const blob=new Blob([imgData],{type:'image/jpeg'});
+  let bitmap=null;
+  try{
+    // 优先用 createImageBitmap 忽略 EXIF; 不支持时回退到 Image
+    if(typeof createImageBitmap==='function'){
+      bitmap=await createImageBitmap(blob,{imageOrientation:'none'});
+    }else{
+      const url=URL.createObjectURL(blob);
+      try{ bitmap=await loadImageFromUrl(url); }
+      finally{ URL.revokeObjectURL(url); }
+    }
+    const natW=bitmap.width, natH=bitmap.height;
+    if(natW<=0||natH<=0) return imgData;
+
+    // 1) 优先检测黄框(扣件区域框) -> 按黄框范围裁剪
+    let cropBox=null;
+    try{
+      const yellowBox=detectYellowBox(bitmap);
+      if(yellowBox){
+        cropBox={
+          x:Math.max(0, yellowBox.x-YELLOW_BOX_PAD),
+          y:Math.max(0, yellowBox.y-YELLOW_BOX_PAD),
+          w:Math.min(natW, yellowBox.w+2*YELLOW_BOX_PAD),
+          h:Math.min(natH, yellowBox.h+2*YELLOW_BOX_PAD),
+        };
+        // 修正 w/h 不超出右下边界
+        if(cropBox.x+cropBox.w>natW) cropBox.w=natW-cropBox.x;
+        if(cropBox.y+cropBox.h>natH) cropBox.h=natH-cropBox.y;
+      }
+    }catch{/* 黄框检测失败 -> 回退 POS */}
+
+    // 2) 回退: 用 POS 框 + 30% 边距
+    if(!cropBox && hasPos){
+      const marginX=w*0.3, marginY=h*0.3;
+      cropBox={
+        x:Math.max(0, Math.round(x-marginX)),
+        y:Math.max(0, Math.round(y-marginY)),
+        w:Math.min(natW, Math.round(w+2*marginX)),
+        h:Math.min(natH, Math.round(h+2*marginY)),
+      };
+      if(cropBox.x+cropBox.w>natW) cropBox.w=natW-cropBox.x;
+      if(cropBox.y+cropBox.h>natH) cropBox.h=natH-cropBox.y;
+    }
+
+    // 无可用裁剪框 -> 返回原图
+    if(!cropBox || cropBox.w<=0 || cropBox.h<=0 ||
+       cropBox.x>=natW || cropBox.y>=natH ||
+       (cropBox.w>=natW && cropBox.h>=natH)){
+      return imgData;
+    }
+    const canvas=document.createElement('canvas');
+    canvas.width=cropBox.w; canvas.height=cropBox.h;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(bitmap, cropBox.x, cropBox.y, cropBox.w, cropBox.h, 0, 0, cropBox.w, cropBox.h);
+    const outBlob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',CROP_JPEG_QUALITY));
+    if(!outBlob) return imgData;
+    return new Uint8Array(await outBlob.arrayBuffer());
+  }catch(e){
+    return imgData;  // 图片解码失败等异常 -> 返回原图
+  }finally{
+    if(bitmap){
+      try{ bitmap.close&&bitmap.close(); }catch(_){}
+    }
+  }
+}
+
+// ============================================================
 // 核心: 处理单个 zip (Q10: 移除未使用的 zipName 参数)
 // ============================================================
 async function processZipBuffer(buffer){
@@ -671,12 +817,16 @@ async function processZipBuffer(buffer){
 
   // 解析 CSV 获取分类
   let folderName='未知_元数据缺失';
+  let posInfo=null;
   if(csvEntry){
     try{
       const csvData=await extractEntryData(buffer,csvEntry);
       const csvText=new TextDecoder('utf-8').decode(csvData);
       const parsed=parseFaultCSV(csvText);
-      if(parsed&&parsed.classCode) folderName=classCodeToName(parsed.classCode);
+      if(parsed){
+        if(parsed.classCode) folderName=classCodeToName(parsed.classCode);
+        posInfo={x:parsed.posX,y:parsed.posY,w:parsed.posW,h:parsed.posH};
+      }
     }catch{/* CSV 损坏, 用默认分类 */}
   }
 
@@ -687,8 +837,12 @@ async function processZipBuffer(buffer){
   }catch(e){
     return {status:'failed',folder:folderName,error:'jpg 提取失败: '+e.message};
   }
+  // 裁剪: 优先检测黄框(扣件区域框), 回退 POS 框; 都无效时返回原图
+  // cropImageToDefect 内部已完整 catch, 不会抛出
+  const pos = posInfo || {};
+  const outData = await cropImageToDefect(jpgData, pos.x, pos.y, pos.w, pos.h);
   const imgName=jpgEntry.name.split('/').pop();
-  return {status:'ok',folder:folderName,imgName,imgData:jpgData};
+  return {status:'ok',folder:folderName,imgName,imgData:outData};
 }
 
 // ============================================================
