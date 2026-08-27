@@ -70,7 +70,8 @@ void CCommon::limit(cv::Rect& r, cv::Mat img)
 void CCommon::combine(int iwidth,int iheight,
                       std::vector<nodeInfo>vnodes,
                       std::vector<cv::Vec6f>vinflaws,
-                      std::vector<std::pair<cv::Vec6f,nodeInfo>>&vouts)
+                      std::vector<std::pair<cv::Vec6f,nodeInfo>>&vouts,
+                      int iTH)
 {
     std::vector<std::vector<cv::Vec6f>>vselect((int)vnodes.size());
     for(int i=0;i<(int)vinflaws.size();i++)
@@ -86,7 +87,7 @@ void CCommon::combine(int iwidth,int iheight,
     {
         int imergebox = vnodes[i].mergeBox;
         if(imergebox == 1 && (int)vselect[i].size()>0)
-            combine_vecf(10, iwidth, iheight, vselect[i]);
+            combine_vecf(iTH, iwidth, iheight, vselect[i]);
 
         int iww= vnodes[i].ww;
         int ihh = vnodes[i].hh;

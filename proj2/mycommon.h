@@ -99,7 +99,8 @@ struct elementInfo{
     int showlog_infer = 0; 
     int cutCnt = 0;
     int overlap = 0;
-    int combine_state = 0; 
+    int combine_iTH = 10;  //同类框合并阈值(像素)，默认10；切图重叠时建议设为>=overlap
+    int combine_state = 0;
     int combine_imgcnt = 0;
     int combine_gap = 0; 
     int limitArea_state = 0; 
@@ -139,7 +140,8 @@ public:
     void combine(int iwidth,int iheight,
                           std::vector<nodeInfo>vnodes,
                           std::vector<cv::Vec6f>vinflaws,
-                          std::vector<std::pair<cv::Vec6f,nodeInfo>>& vOuts);
+                          std::vector<std::pair<cv::Vec6f,nodeInfo>>& vOuts,
+                          int iTH = 10);
     void delete_noflaw(int inareaID,
                                 std::vector<nodeInfo>vnodes,
                                 std::vector<cv::Vec6f>vins,

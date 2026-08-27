@@ -13,7 +13,7 @@
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 	 	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
 		<trtInfo version="5">		  							
-			<path path="guang3/GUANG3-REGION-1-best-20260508.engine"/>
+			<path path="guang3/G3-REGION-1-best-20260826.engine"/>
 			<size w="640" h="640" depth="3" ispad="0"/> 
 			<nodes>
 				<name_0 areaID="1000" name="E型扣件区域" w="30" h="50" fp="50" mergeBox="1"/>
@@ -108,7 +108,7 @@
 	<element0 name="4_rail"> 
         <state state="1"/>
 		<debug debug="0"/>  			
-		<cut Cnt="4" overlap="100"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 
+		<cut Cnt="4" overlap="100" combine_iTH="100"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域；combine_iTH同类框合并阈值(像素)-->
 		<trtInfo version="5">
 			<path path="guang3/G3-GMDK-best-20260817.engine"/>
 			<size w="640" h="640" depth="3"/>				

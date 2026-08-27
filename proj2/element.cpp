@@ -472,7 +472,7 @@ int Celement::process(cv::Mat src,
 
     std::vector<std::pair<cv::Vec6f,nodeInfo>>vouts;
     vouts.clear();
-    combine(src.cols-1,src.rows-1, m_element1.trt.vnodes, vResults,vouts);
+    combine(src.cols-1,src.rows-1, m_element1.trt.vnodes, vResults,vouts, m_element1.combine_iTH);
 
     if ((int)vouts.size()>0 && (int)vResultAreas.size() > 0)
         fjmn_lf_js_process(src, vResultAreas, vouts);
