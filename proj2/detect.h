@@ -6,6 +6,10 @@
 
 const int MAX_DETECT_NUM = 5;
 
+//DLL输出缓冲区大小（字节），用于detect_process返回JSON字符串
+//单张4096x4096图片在缺陷较多时JSON可达数十KB，256KB留足余量
+const int OUTDATA_BUFFER_SIZE = 262144;
+
 struct ParamIn
 {
     int iw;

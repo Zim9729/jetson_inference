@@ -612,7 +612,18 @@ void Cdetect::main_process(char* file_Data, char* mainOutdata, int* det_state, s
         *det_state = 0;
     if (OutData.length() > 0 && istate == 1)
     {
-        OutData.copy(mainOutdata, OutData.length());
+        //边界安全拷贝：最多拷贝 OUTDATA_BUFFER_SIZE-1 字节，保留1字节给'\0'
+        size_t copyLen = OutData.length();
+        if (copyLen > OUTDATA_BUFFER_SIZE - 1)
+        {
+            copyLen = OUTDATA_BUFFER_SIZE - 1;
+            std::string sWarnLog = "#####WARNING: OutData truncated from "
+                + std::to_string(OutData.length()) + " to "
+                + std::to_string(copyLen) + " bytes";
+            ShowLog(ERROR_1, _T(""), sWarnLog, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
+        }
+        OutData.copy(mainOutdata, copyLen);
+        mainOutdata[copyLen] = '\0';
     }
 }
 

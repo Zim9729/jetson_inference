@@ -79,7 +79,7 @@ extern "C" PROJ2_API void record_perf_file_total(const char* imagePath,
 }
 
 thread_local std::unique_ptr<Cdetect> m_MainProcess;
-thread_local char outdata[1024] = { '\0' };
+thread_local char outdata[OUTDATA_BUFFER_SIZE] = { '\0' };
 
 
 //det_state的状态:
