@@ -1044,7 +1044,7 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         if ((int)velement_flaws[i].size() > 0)
             vflaws.insert(vflaws.end(), velement_flaws[i].begin(), velement_flaws[i].end());
     }
-    if ((int)vflaws.size() > 20)
+    if ((int)vflaws.size() > 50)
         vflaws.clear(); //缺陷结果有问题，直接清空数据
 
 
@@ -1066,7 +1066,7 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         vOutflaws.push_back(vflaws[i]);
     }
 
-    //同类型缺陷强制合并：同一张图上每个XLBH_type只输出一个（外接矩形+最高置信度）
+    //同类型缺陷强制合并：同一张图上每个XLBH_type只输出一个（保留最高置信度的框）
     if ((int)vOutflaws.size() > 1)
     {
         std::unordered_map<std::string, flawOutInfo> type_merged;
@@ -1082,21 +1082,11 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
             else
             {
                 flawOutInfo& merged = it->second;
-                //取外接矩形
-                int x1 = (std::min)((int)merged.flawloc.val[0], (int)loc.val[0]);
-                int y1 = (std::min)((int)merged.flawloc.val[1], (int)loc.val[1]);
-                int x2 = (std::max)((int)(merged.flawloc.val[0] + merged.flawloc.val[2]),
-                                  (int)(loc.val[0] + loc.val[2]));
-                int y2 = (std::max)((int)(merged.flawloc.val[1] + merged.flawloc.val[3]),
-                                  (int)(loc.val[1] + loc.val[3]));
-                merged.flawloc.val[0] = (float)x1;
-                merged.flawloc.val[1] = (float)y1;
-                merged.flawloc.val[2] = (float)(x2 - x1);
-                merged.flawloc.val[3] = (float)(y2 - y1);
-                //保留最高置信度
-                merged.flawloc.val[4] = (std::max)(merged.flawloc.val[4], loc.val[4]);
-                //arealoc也取外接
-                merged.arealoc = merged.arealoc | vOutflaws[i].arealoc;
+                //保留置信度最高的框，不取外接矩形
+                if (loc.val[4] > merged.flawloc.val[4])
+                {
+                    type_merged[stype] = vOutflaws[i];
+                }
             }
         }
         vOutflaws.clear();
