@@ -113,8 +113,8 @@
 			<path path="guang3/G3-GMDK-best-20260817.engine"/>
 			<size w="640" h="640" depth="3"/>				
 			<nodes>		
-				<name_0 padding="1" areaID="1008" partID="1100" flawID="11" name="轨面掉块" w="10" h="10" fp="50" mergeBox="1"/>
-				<name_1 padding="1" areaID="1008" partID="1100" flawID="13" name="轨面掉块" w="10" h="30" fp="50" mergeBox="1"/>
+				<name_0 padding="1" areaID="1008" partID="1100" flawID="11" name="轨面掉块" w="10" h="10" fp="60" mergeBox="1"/>
+				<name_1 padding="1" areaID="1008" partID="1100" flawID="13" name="轨面掉块" w="10" h="30" fp="60" mergeBox="1"/>
 				<name_2 padding="1" areaID="1008" partID="1100" flawID="10" name="轨面波磨" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_3 padding="1" areaID="1008" partID="1100" flawID="10" name="其它" w="30" h="50" fp="100" mergeBox="1"/>
 				<name_4 padding="1" areaID="1008" partID="1100" flawID="10" name="污渍" w="30" h="50" fp="100" mergeBox="1"/>
@@ -199,7 +199,7 @@
 			<path path="guang3/G3_white_FJMN_1_20260827_best_EfficientNMS_TRT.engine"/>
 			<size w="640" h="640" depth="3"/>
 			<nodes>
-				<name_0 padding="0" areaID="1200" partID="1200" flawID="31" name="道床翻浆冒泥" w="30" h="10" fp="50" mergeBox="1"/>
+				<name_0 padding="0" areaID="1200" partID="1200" flawID="31" name="道床翻浆冒泥" w="30" h="10" fp="60" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_0 GuiDao_XLBH_type="51" DaoCha_XLBH_type="51" XLBH_name="道床翻浆冒泥"/>
