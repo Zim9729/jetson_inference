@@ -12,6 +12,7 @@
 #include <mutex>
 #include <random>
 #include <cctype>
+#include <unordered_map>
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -1063,6 +1064,44 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
             continue;
         }
         vOutflaws.push_back(vflaws[i]);
+    }
+
+    //同类型缺陷强制合并：同一张图上每个XLBH_type只输出一个（外接矩形+最高置信度）
+    if ((int)vOutflaws.size() > 1)
+    {
+        std::unordered_map<std::string, flawOutInfo> type_merged;
+        for (int i = 0; i < (int)vOutflaws.size(); i++)
+        {
+            const std::string& stype = vOutflaws[i].XLBH_type;
+            const cv::Vec6f& loc = vOutflaws[i].flawloc;
+            auto it = type_merged.find(stype);
+            if (it == type_merged.end())
+            {
+                type_merged[stype] = vOutflaws[i];
+            }
+            else
+            {
+                flawOutInfo& merged = it->second;
+                //取外接矩形
+                int x1 = (std::min)((int)merged.flawloc.val[0], (int)loc.val[0]);
+                int y1 = (std::min)((int)merged.flawloc.val[1], (int)loc.val[1]);
+                int x2 = (std::max)((int)(merged.flawloc.val[0] + merged.flawloc.val[2]),
+                                  (int)(loc.val[0] + loc.val[2]));
+                int y2 = (std::max)((int)(merged.flawloc.val[1] + merged.flawloc.val[3]),
+                                  (int)(loc.val[1] + loc.val[3]));
+                merged.flawloc.val[0] = (float)x1;
+                merged.flawloc.val[1] = (float)y1;
+                merged.flawloc.val[2] = (float)(x2 - x1);
+                merged.flawloc.val[3] = (float)(y2 - y1);
+                //保留最高置信度
+                merged.flawloc.val[4] = (std::max)(merged.flawloc.val[4], loc.val[4]);
+                //arealoc也取外接
+                merged.arealoc = merged.arealoc | vOutflaws[i].arealoc;
+            }
+        }
+        vOutflaws.clear();
+        for (auto& kv : type_merged)
+            vOutflaws.push_back(kv.second);
     }
 
     //计算物理值
