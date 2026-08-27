@@ -61,4 +61,7 @@ private:
     std::unordered_set<int> m_hashPadding1;
     nodeInfo m_node_fjmn;
     nodeInfo m_node_js;
+public:
+    //区域检测结果(partID=1201道床区域/1401水沟区域等)，供跨element过滤使用
+    std::vector<cv::Vec6f> m_vResultAreas;
 };

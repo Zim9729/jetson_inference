@@ -474,6 +474,9 @@ int Celement::process(cv::Mat src,
     vouts.clear();
     combine(src.cols-1,src.rows-1, m_element1.trt.vnodes, vResults,vouts, m_element1.combine_iTH);
 
+    //保存区域检测结果，供跨element过滤使用
+    m_vResultAreas = vResultAreas;
+
     if ((int)vouts.size()>0 && (int)vResultAreas.size() > 0)
         fjmn_lf_js_process(src, vResultAreas, vouts);
 

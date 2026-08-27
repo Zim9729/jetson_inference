@@ -1025,6 +1025,49 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         future.get();
     }
 
+    //跨element过滤：用element2的区域检测结果过滤element3的翻浆冒泥
+    //规则：缺陷中心在水沟区域(1401)内则丢弃；缺陷中心不在道床区域(1201)内则丢弃
+    if (element_objs[2] != nullptr && istate_elements[2] == 1 &&
+        element_objs[3] != nullptr && istate_elements[3] == 1 &&
+        (int)velement_flaws[3].size() > 0)
+    {
+        auto& vAreas = element_objs[2]->m_vResultAreas;
+        if ((int)vAreas.size() > 0)
+        {
+            std::vector<flawOutInfo> vfiltered;
+            for (int i = 0; i < (int)velement_flaws[3].size(); i++)
+            {
+                cv::Vec6f loc = velement_flaws[3][i].flawloc;
+                float fmid_x = loc.val[0] + loc.val[2] / 2.0f;
+                float fmid_y = loc.val[1] + loc.val[3] / 2.0f;
+                bool bInShuigou = false;  //水沟区域1401
+                bool bInDaochuang = false; //道床区域1201
+                for (int k = 0; k < (int)vAreas.size(); k++)
+                {
+                    int areaPartID = (int)vAreas[k].val[5];
+                    float ax = vAreas[k].val[0], ay = vAreas[k].val[1];
+                    float aw = vAreas[k].val[2], ah = vAreas[k].val[3];
+                    if (fmid_x >= ax && fmid_x <= ax + aw &&
+                        fmid_y >= ay && fmid_y <= ay + ah)
+                    {
+                        if (areaPartID == 1401) bInShuigou = true;
+                        if (areaPartID == 1201) bInDaochuang = true;
+                    }
+                }
+                //在水沟内则丢弃；不在道床内则丢弃
+                if (bInShuigou || !bInDaochuang)
+                {
+                    std::string sinfolog = cv::format("%s[fjmn_filter] drop type=51 (inShuigou=%d, inDaochuang=%d)",
+                        m_sPID, (int)bInShuigou, (int)bInDaochuang);
+                    ShowLog(ERROR_1, _T(""), sinfolog, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
+                    continue;
+                }
+                vfiltered.push_back(velement_flaws[3][i]);
+            }
+            velement_flaws[3] = std::move(vfiltered);
+        }
+    }
+
     vkoujian_flaws.reserve(vkoujian_flaws_detail0.size() + vkoujian_flaws_detail1.size());
     vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail0.begin(), vkoujian_flaws_detail0.end());
     vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail1.begin(), vkoujian_flaws_detail1.end());
