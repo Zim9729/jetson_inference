@@ -196,7 +196,7 @@
 		<debug debug="0"/>
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域-->
 		<trtInfo version="10">
-			<path path="guang3/G3_white_FJMN_1_20260827_best_EfficientNMS_TRT.engine"/>
+			<path path="guang3/G3_white_FJMN_1_20260902_best_EfficientNMS_TRT.engine"/>
 			<size w="640" h="640" depth="3"/>
 			<nodes>
 				<name_0 padding="0" areaID="1200" partID="1200" flawID="31" name="道床翻浆冒泥" w="30" h="10" fp="60" mergeBox="1"/>
