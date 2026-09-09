@@ -181,9 +181,10 @@ bool Ckoujian::yolo_trtV5(cv::Mat src,
             continue;
 
         //infer
-        if(padding != 1)
+        bool usePadding = m_element1.trt.directResize < 0 ? padding == 1 : m_element1.trt.directResize == 0;
+        if(!usePadding)
             cv::resize(img,img,size);
-        ctensorrt.OneDetection(img, vTmpResult0, modelYolo,padding);
+        ctensorrt.OneDetection(img, vTmpResult0, modelYolo,usePadding);
         float factorX = float(r.width) / float(img.cols);
         float factorY = float(r.height) / float(img.rows);
 

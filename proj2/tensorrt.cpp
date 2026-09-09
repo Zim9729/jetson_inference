@@ -1,6 +1,7 @@
 #pragma once
 #include "mylog.h"
 #include "tensorrt.h"
+#include "yolo_nms.h"
 
 Ctensorrt::Ctensorrt()
 {
@@ -245,6 +246,120 @@ void Ctensorrt::postprocess_yolo(std::vector<cv::Vec6f>& objs, MyYolov10Det mode
     }
 }
 
+// ponytail: YOLO11 without EfficientNMS — single raw output [1, 4+nc, num_boxes] or [1, num_boxes, 4+nc]
+//           CPU-side confidence filter + NMS, ceiling: O(num_boxes * nc) per image, fine for 1280x1280
+void Ctensorrt::postprocess_yolo11(std::vector<cv::Vec6f>& objs, MyYolov10Det model)
+{
+    objs.clear();
+    if (model.modelMemory.output_bindings.empty() || model.modelMemory.host_ptrs.empty())
+        return;
+
+    float* output = static_cast<float*>(model.modelMemory.host_ptrs[0]);
+    auto& dims = model.modelMemory.output_bindings[0].dims;
+    int ndim = dims.nbDims;
+
+    int num_boxes = 0, num_classes = 0;
+    bool transposed = false; // true: [1, 4+nc, num_boxes], false: [1, num_boxes, 4+nc]
+
+    if (ndim == 3)
+    {
+        int d1 = dims.d[1] > 0 ? dims.d[1] : 0;
+        int d2 = dims.d[2] > 0 ? dims.d[2] : 0;
+        if (d1 > 0 && d2 > 0 && d1 < d2) { num_classes = d1 - 4; num_boxes = d2; transposed = true; }
+        else if (d1 > 0 && d2 > 0)       { num_boxes = d1; num_classes = d2 - 4; }
+    }
+    else if (ndim == 2)
+    {
+        int d0 = dims.d[0] > 0 ? dims.d[0] : 0;
+        int d1 = dims.d[1] > 0 ? dims.d[1] : 0;
+        if (d0 > 0 && d1 > 0 && d0 < d1) { num_classes = d0 - 4; num_boxes = d1; transposed = true; }
+        else if (d0 > 0 && d1 > 0)       { num_boxes = d0; num_classes = d1 - 4; }
+    }
+    if (num_classes <= 0 || num_boxes <= 0)
+        return;
+
+    auto& dw = model.pparam.dw;
+    auto& dh = model.pparam.dh;
+    auto& width = model.pparam.width;
+    auto& height = model.pparam.height;
+    auto& ratio = model.pparam.ratio;
+
+    const float conf_thresh = 0.25f;
+    const float nms_thresh = 0.45f;
+
+    std::vector<int> classIds;
+    std::vector<float> confidences;
+    std::vector<cv::Rect> boxes;
+
+    int stride = 4 + num_classes;
+
+    for (int i = 0; i < num_boxes; i++)
+    {
+        float cx, cy, w, h;
+        float max_score = 0.f;
+        int max_class = -1;
+
+        if (transposed)
+        {
+            cx = output[0 * num_boxes + i];
+            cy = output[1 * num_boxes + i];
+            w  = output[2 * num_boxes + i];
+            h  = output[3 * num_boxes + i];
+            for (int c = 0; c < num_classes; c++)
+            {
+                float score = output[(4 + c) * num_boxes + i];
+                if (score > max_score) { max_score = score; max_class = c; }
+            }
+        }
+        else
+        {
+            int off = i * stride;
+            cx = output[off + 0];
+            cy = output[off + 1];
+            w  = output[off + 2];
+            h  = output[off + 3];
+            for (int c = 0; c < num_classes; c++)
+            {
+                float score = output[off + 4 + c];
+                if (score > max_score) { max_score = score; max_class = c; }
+            }
+        }
+
+        if (max_score < conf_thresh || max_class < 0)
+            continue;
+
+        float x0 = (cx - w * 0.5f - dw) * ratio;
+        float y0 = (cy - h * 0.5f - dh) * ratio;
+        float x1 = (cx + w * 0.5f - dw) * ratio;
+        float y1 = (cy + h * 0.5f - dh) * ratio;
+
+        x0 = clamp(x0, 0.f, width);
+        y0 = clamp(y0, 0.f, height);
+        x1 = clamp(x1, 0.f, width);
+        y1 = clamp(y1, 0.f, height);
+
+        boxes.push_back(cv::Rect(x0, y0, x1 - x0, y1 - y0));
+        confidences.push_back(max_score);
+        classIds.push_back(max_class);
+    }
+
+    std::vector<int> indices = class_aware_nms(boxes, confidences, classIds, conf_thresh, nms_thresh);
+
+    for (int idx : indices)
+    {
+        cv::Vec6f val;
+        val[0] = boxes[idx].x;
+        val[1] = boxes[idx].y;
+        val[2] = boxes[idx].width;
+        val[3] = boxes[idx].height;
+        val[4] = confidences[idx];
+        val[5] = classIds[idx];
+        objs.push_back(val);
+        if ((int)objs.size() > 30)
+            break;
+    }
+}
+
 int Ctensorrt::load_xml_trt(std::string m_elementid,
                         std::string xml_path,
                         std::string config_path,
@@ -267,6 +382,7 @@ int Ctensorrt::load_xml_trt(std::string m_elementid,
     model.imgheight = element.trt.h;
     model.imgchannel = element.trt.depth;
     model.ispad = element.trt.ispad;
+    model.model_version = element.trt.model_version;
     //std::cout << "{CCommon::load_trt} "<< elementName << "  model_trt_path=" << modelYolo.model_trt_path << endl;
     if (true == ini_trt(model))
     {
@@ -508,7 +624,10 @@ void Ctensorrt::infer_yolo(cv::Mat image,
         //LOG(INFO) << "{Ctensorrt::infer_yolo}: postprocess_yolo..." << std::endl;
         ShowLog(INFO_3, _T("postprocess_yolo..."), "", 1, __FILE__, __FUNCTION__, std::to_string(__LINE__)); //开始初始化
     }
-    postprocess_yolo(objs, model);
+    if (model.model_version == "yolov11")
+        postprocess_yolo11(objs, model);
+    else
+        postprocess_yolo(objs, model);
     if(ishowlog)
     {
         //LOG(INFO) << "{Ctensorrt::infer_yolo}: end..." << std::endl;

@@ -265,9 +265,10 @@ bool Celement::yolo_trtV5(cv::Mat src,
         if(img.empty())
             continue;
         //infer
-        if(padding != 1)
+        bool usePadding = m_element1.trt.directResize < 0 ? padding == 1 : m_element1.trt.directResize == 0;
+        if(!usePadding)
             cv::resize(img,img,size);
-        ctensorrt.OneDetection(img, vTmpResult0, modelYolo,padding,m_element1.showlog_infer);
+        ctensorrt.OneDetection(img, vTmpResult0, modelYolo,usePadding,m_element1.showlog_infer);
         //delete no flaw id
         vector<cv::Vec6f> vTmpResult;
         delete_noflaw(areaiD,vnodes,vTmpResult0,vTmpResult);
@@ -331,7 +332,8 @@ bool Celement::yolo_trtV10(cv::Mat src,
         if(img.empty())
             continue;
         //infer
-        if(padding != 1)
+        bool usePadding = m_element1.trt.directResize < 0 ? padding == 1 : m_element1.trt.directResize == 0;
+        if(!usePadding)
             cv::resize(img,img,size);
         ctensorrt.infer_yolo(img, vTmpResult0, modelYolo,m_element1.showlog_infer);
         //delete no flaw id
@@ -405,14 +407,14 @@ void Celement::fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
     {
         cv::Vec6f flawloc = vin[i].first;
         nodeInfo node = vin[i].second;
-        int iin_drop = 0; //落在道床/水沟区域内则丢弃
+        int iin_drop = 0; //落在水沟区域内则丢弃
         if (node.partID == 1200 && (node.flawID == 20 || node.flawID == 31 || node.flawID == 22)) //裂缝\冒泥\积水
         {
             for (int k = 0;k < (int)vAreas.size();k++)
             {
                 int areaPartID = (int)vAreas[k].val[5];
-                //道床区域(1201)或水沟区域(1401)：缺陷中心在内则丢弃
-                if ((areaPartID == 1201 || areaPartID == 1401) &&
+                //水沟区域(1401)：缺陷中心在内则丢弃
+                if (areaPartID == 1401 &&
                     1 == mid_inside_vec6f(flawloc, vAreas[k]))
                 {
                     iin_drop = 1;

@@ -366,18 +366,22 @@ public:
         int h = pugi::xml_node(trtInfo.child("size")).attribute("h").as_int();
         int depth = pugi::xml_node(trtInfo.child("size")).attribute("depth").as_int();
         int ispad = pugi::xml_node(trtInfo.child("size")).attribute("ispad").as_int();
+        int directResize = trtInfo.attribute("directResize").as_int(-1);
+        if (directResize != 0 && directResize != 1)
+            directResize = -1;
         element_info.trt.w = w;
         element_info.trt.h = h;
         element_info.trt.depth = depth;
         element_info.trt.ispad = ispad;
+        element_info.trt.directResize = directResize;
         element_info.trt.model_version = "yolov" + model_version;
         element_info.trt.trt_path = trt_path;
 
         if (ishowlog_myxml == 1) {
             std::string showinfo = cv::format(
-                    "%s:trtpath:%s: version=%s,w=%d h=%d depth=%d ispad=%d",
+                    "%s:trtpath:%s: version=%s,w=%d h=%d depth=%d ispad=%d directResize=%d",
                     elementName.c_str(), trt_path.c_str(), element_info.trt.model_version.c_str(),
-                    w, h, depth, ispad);
+                    w, h, depth, ispad, directResize);
             ShowLog(INFO_3, _T(""), showinfo, 0, __FILE__, __FUNCTION__, std::to_string(__LINE__));
         }
         for (int i = 0; i < 30; i++) {

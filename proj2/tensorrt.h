@@ -134,6 +134,7 @@ typedef struct MyYolov10Det
     int imgchannel = 0;
     int ispad = 0;
     std::string trtmodel_path = "";
+    std::string model_version = "";  //yolov10(EfficientNMS), yolov11(no NMS)
     ModelStruct modelStruct;
     ModelMemory modelMemory;
     PreParam pparam;
@@ -164,6 +165,7 @@ public:
     void letterbox(const cv::Mat& image, cv::Mat& out, cv::Size& size, PreParam& pparam);
     void copy_from_Mat(const cv::Mat& image, cv::Size& size, MyYolov10Det& model);
     void postprocess_yolo(std::vector<cv::Vec6f>& objs, MyYolov10Det model);
+    void postprocess_yolo11(std::vector<cv::Vec6f>& objs, MyYolov10Det model);
 
 private:
     int m_ishowlog = 0;

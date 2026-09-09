@@ -343,6 +343,45 @@ if(WIN32)
 
     add_test(NAME myjson_write_tests COMMAND myjson_write_tests)
 
+    add_executable(yolo_nms_tests
+        "${PROJECT_ROOT}/tests/yolo_nms_test.cpp"
+        "${PROJECT_ROOT}/proj2/tensorrt.cpp"
+        "${PROJECT_ROOT}/proj2/mylog.cpp"
+    )
+
+    target_include_directories(yolo_nms_tests
+        PRIVATE
+            ${PROJ2_PRIVATE_INCLUDE_DIRS}
+    )
+
+    target_link_directories(yolo_nms_tests
+        PRIVATE
+            ${PROJ2_PRIVATE_LINK_DIRS}
+    )
+
+    target_link_libraries(yolo_nms_tests
+        PRIVATE
+            pugixml_vendor
+            "${OPENCV_WORLD_LIB}"
+            ${TENSORRT_X64_LIBS}
+            ${CUDA_X64_LIBS}
+            Rpcrt4
+    )
+
+    target_compile_definitions(yolo_nms_tests
+        PRIVATE
+            UNICODE
+            _UNICODE
+            _CRT_SECURE_NO_WARNINGS
+    )
+
+    target_compile_options(yolo_nms_tests
+        PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    )
+
+    add_test(NAME yolo_nms_tests COMMAND yolo_nms_tests)
+
     file(GLOB_RECURSE STAGE_RUNTIME_CONFIG_INPUTS CONFIGURE_DEPENDS
         "${PROJECT_ROOT}/config/*"
     )

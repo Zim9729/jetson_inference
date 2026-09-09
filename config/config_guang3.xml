@@ -12,7 +12,7 @@
         <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 	 	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
-		<trtInfo version="5">		  							
+		<trtInfo version="5" directResize="1">
 			<path path="guang3/G3-REGION-1-best-20260826.engine"/>
 			<size w="640" h="640" depth="3" ispad="0"/> 
 			<nodes>
@@ -34,7 +34,7 @@
         <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
-		<trtInfo version="5">	
+		<trtInfo version="5" directResize="1">
 			<path path="guang3/guang3-quyu-2-best-20250415.engine"/>
 			<size w="640" h="640" depth="3" ispad="0"/> 		
 			<nodes>
@@ -51,7 +51,7 @@
 		<debug debug="0"/>  											
 		<cut Cnt="0" overlap="0"/>    	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 
 		<limitArea state="1" left="0" right="4096" top="20" bottom="2028"/>	 <!-- state:0不限制缺陷区域，1限制区域；--> 			
-		<trtInfo version="5">
+		<trtInfo version="5" directResize="1">
 			<path path="guang3/GUANG3-DETAIL-1-best-20260810.engine"/>
 			<size w="640" h="640" depth="3"/>						
 			<nodes>			
@@ -85,7 +85,7 @@
         <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 	 
-		<trtInfo version="5">
+		<trtInfo version="5" directResize="1">
 			<path path="guang3/GUANG3-DETAIL-2-best-20260807.engine"/>
 			<size w="640" h="640" depth="3"/>					
 			<nodes> 		
@@ -109,7 +109,7 @@
         <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="4" overlap="100" combine_iTH="100"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域；combine_iTH同类框合并阈值(像素)-->
-		<trtInfo version="5">
+		<trtInfo version="5" directResize="1">
 			<path path="guang3/G3-GMDK-best-20260817.engine"/>
 			<size w="640" h="640" depth="3"/>				
 			<nodes>		
@@ -131,7 +131,7 @@
         <state state="1"/>
 		<debug debug="0"/>  				
 		<cut Cnt="0" overlap="0"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 
-		<trtInfo version="5">
+		<trtInfo version="5" directResize="1">
 			<path path="guang3/G3-DCYW-best-20260320.engine"/>
 			<size w="640" h="640" depth="3" padding="0"/>		
 			<nodes>
@@ -168,11 +168,11 @@
         <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 			
-		<trtInfo version="10">
+		<trtInfo version="10" directResize="1">
 			<path path="guang3/guang3-dcqx-best_EfficientNMS_TRT-20260806.engine"/>
 			<size w="1280" h="1280" depth="3"/>					
 			<nodes> 		
-				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="0道床裂缝" w="50" h="10" fp="50" mergeBox="1"/>
+				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="0道床裂缝" w="50" h="10" fp="40" mergeBox="1"/>
 				<name_1 padding="0" areaID="1200" partID="1200" flawID="31" name="1道床翻浆冒泥" w="10" h="10" fp="50" mergeBox="1"/>
 				<name_2 padding="0" areaID="1200" partID="1301" flawID="01" name="2扣件轨枕区域" w="30" h="30" fp="50" mergeBox="1"/>
 				<name_3 padding="0" areaID="1200" partID="1201" flawID="01" name="3道床区域" w="30" h="30" fp="100" mergeBox="1"/>
@@ -195,7 +195,7 @@
         <state state="1"/>
 		<debug debug="0"/>
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域-->
-		<trtInfo version="10">
+		<trtInfo version="10" directResize="1">
 			<path path="guang3/G3_white_FJMN_1_20260902_best_EfficientNMS_TRT.engine"/>
 			<size w="640" h="640" depth="3"/>
 			<nodes>

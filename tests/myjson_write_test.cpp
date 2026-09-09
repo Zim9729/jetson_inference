@@ -357,7 +357,7 @@ void test_defect_image_switch_writes_scaled_single_defect_image()
     cv::Mat defect_image = cv::imdecode(defect_image_bytes, cv::IMREAD_COLOR);
     require(!defect_image.empty(), "written defect image should be readable");
     require(defect_image.cols == 80, "defect image width should keep full image width");
-    require(defect_image.rows == 200, "defect image height should scale full image by count_fastening / 3");
+    require(defect_image.rows == 300, "defect image height should scale full image by count_fastening / expected_count_fastening");
 }
 
 void test_defect_serial_increments_across_images_same_day()

@@ -146,10 +146,11 @@ bool Carea::yolo_trtV5(cv::Mat src,
             continue;
 
         //infer
-        if(modelYolo.ispad != 1)
+        bool usePadding = m_element1.trt.directResize < 0 ? modelYolo.ispad == 1 : m_element1.trt.directResize == 0;
+        if(!usePadding)
             cv::resize(img,img,size);
         ////LOG(INFO) << m_elementname <<"{Celement::yolo_trtV5}: infer start" << std::endl;
-        ctensorrt.OneDetection(img, vTmpResult,modelYolo,modelYolo.ispad,0);
+        ctensorrt.OneDetection(img, vTmpResult,modelYolo,usePadding,0);
         ////LOG(INFO) << m_elementname <<"{Celement::yolo_trtV5}: infer end" << std::endl;
        //show
         if(m_element1.debug >= 2) {

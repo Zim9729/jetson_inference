@@ -87,6 +87,7 @@ struct trtInfo {
     int h = 0;
     int depth = 0;
     int ispad = 0;
+    int directResize = -1;
     std::vector<nodeInfo>vnodes;
     std::unordered_set<int> hashSet;
 };
