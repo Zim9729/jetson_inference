@@ -398,9 +398,10 @@ bool isOverlapping(cv::Vec6f rect1, cv::Vec6f rect2)
 
 
 
-void Celement::fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas, 
+void Celement::fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
     std::vector<std::pair<cv::Vec6f, nodeInfo>>& vOutlocs)
 {
+    int isg_area = m_element1.sg_area; //水沟覆盖占比阈值(%)：>0按面积占比判定，0按缺陷中心点判定
     std::vector<std::pair<cv::Vec6f, nodeInfo>>vin(vOutlocs);
     vOutlocs.clear();
     for (int i = 0;i < (int)vin.size();i++)
@@ -410,15 +411,35 @@ void Celement::fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
         int iin_drop = 0; //落在水沟区域内则丢弃
         if (node.partID == 1200 && (node.flawID == 20 || node.flawID == 31 || node.flawID == 22)) //裂缝\冒泥\积水
         {
+            cv::Rect rflaw;
+            cv::Mat sgmask; //缺陷框被水沟区域覆盖的掩码(占比模式)
+            if (isg_area > 0)
+            {
+                rflaw = cv::Rect((int)flawloc.val[0], (int)flawloc.val[1], (int)flawloc.val[2], (int)flawloc.val[3]);
+                if (rflaw.width > 0 && rflaw.height > 0)
+                    sgmask = cv::Mat::zeros(rflaw.height, rflaw.width, CV_8U);
+            }
+            int isg_cnt = 0; //检出的水沟区域个数
             for (int k = 0;k < (int)vAreas.size();k++)
             {
                 int areaPartID = (int)vAreas[k].val[5];
-                //水沟区域(1401)：缺陷中心在内则丢弃
-                if (areaPartID == 1401 &&
-                    1 == mid_inside_vec6f(flawloc, vAreas[k]))
+                //水沟区域(1401)：占比模式累计覆盖面积；否则缺陷中心在内则丢弃
+                if (areaPartID == 1401)
                 {
-                    iin_drop = 1;
-                    break;
+                    isg_cnt++;
+                    if (!sgmask.empty())
+                    {
+                        cv::Rect rsg((int)vAreas[k].val[0], (int)vAreas[k].val[1],
+                                     (int)vAreas[k].val[2], (int)vAreas[k].val[3]);
+                        cv::Rect inter = rflaw & rsg;
+                        if (inter.width > 0 && inter.height > 0)
+                            sgmask(inter - rflaw.tl()).setTo(255);
+                    }
+                    else if (1 == mid_inside_vec6f(flawloc, vAreas[k]))
+                    {
+                        iin_drop = 1;
+                        break;
+                    }
                 }
                 if (m_node_fjmn.partID != 0 && node.flawID == 31 && areaPartID == 1301) //轨枕区域
                 {
@@ -434,6 +455,17 @@ void Celement::fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
                         node = m_node_js;
                     }
                 }
+            }
+            //占比判定：缺陷框被水沟覆盖>=阈值判为误报丢弃
+            if (iin_drop == 0 && isg_cnt > 0 && !sgmask.empty())
+            {
+                float fcover = (float)cv::countNonZero(sgmask) * 100.0f / (float)(rflaw.width * rflaw.height);
+                if (fcover >= isg_area)
+                    iin_drop = 1;
+                std::string sloginfo = cv::format("%s[fjmn_sg] flawID=%d cover=%.1f%% th=%d%% sg_cnt=%d %s",
+                    m_elementname.c_str(), node.flawID, fcover, isg_area, isg_cnt,
+                    iin_drop == 1 ? "DROP" : "keep");
+                ShowLog(ERROR_1, _T(""), sloginfo, 1, __FILE__, __FUNCTION__, std::to_string(__LINE__));
             }
         }
         if (iin_drop == 0)

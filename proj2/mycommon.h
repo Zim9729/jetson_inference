@@ -101,6 +101,7 @@ struct elementInfo{
     int cutCnt = 0;
     int overlap = 0;
     int combine_iTH = 10;  //同类框合并阈值(像素)，默认10；切图重叠时建议设为>=overlap
+    int sg_area = 0;     //水沟覆盖占比阈值(%)：缺陷框被水沟区域(1401)覆盖>=该值时判误报丢弃；0不启用(用中心点判定)
     int combine_state = 0;
     int combine_imgcnt = 0;
     int combine_gap = 0; 

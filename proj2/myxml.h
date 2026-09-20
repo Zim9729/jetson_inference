@@ -335,6 +335,9 @@ public:
         int cutCnt = pugi::xml_node(element.child("cut")).attribute("Cnt").as_int();
         int overlap = pugi::xml_node(element.child("cut")).attribute("overlap").as_int();
         int combine_iTH = pugi::xml_node(element.child("cut")).attribute("combine_iTH").as_int(10);
+        int sg_area = pugi::xml_node(element.child("cut")).attribute("sg_area").as_int(0);
+        if (sg_area < 0 || sg_area > 100)
+            sg_area = 0;
         int combine_state = pugi::xml_node(element.child("combine")).attribute("state").as_int();
         int combine_imgcnt = pugi::xml_node(element.child("combine")).attribute("imgCnt").as_int();
         int combine_gap = pugi::xml_node(element.child("combine")).attribute("gap").as_int();
@@ -350,6 +353,7 @@ public:
         element_info.cutCnt = cutCnt;
         element_info.overlap = overlap;
         element_info.combine_iTH = combine_iTH;
+        element_info.sg_area = sg_area;
         element_info.combine_state = combine_state;
         element_info.combine_imgcnt = combine_imgcnt;
         element_info.combine_gap = combine_gap;
