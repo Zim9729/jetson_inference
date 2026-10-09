@@ -9,7 +9,7 @@
 	<debugFolder debugFolder=""/> 		   <!-- 保存调试结果的文件夹全路径:“”不保存 -->
 	<!--*******区域1*******-->
     <area0 name="0_region1"> 
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 	 	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
 		<trtInfo version="5" directResize="1">
@@ -47,7 +47,7 @@
 	</area1>
 	<!--*******区域1细节1*******-->
 	<detail0 name="2_detail1">
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>  											
 		<cut Cnt="0" overlap="0"/>    	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 
 		<limitArea state="0" left="0" right="4096" top="20" bottom="4096"/>	 <!-- state:0不限制缺陷区域，1限制区域；--> 			
@@ -128,7 +128,7 @@
 	</element0>
 	<!--*******道床异物*******-->
 	<element1 name="5_dc_yiwu">
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>  				
 		<cut Cnt="0" overlap="0"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 
 		<trtInfo version="5" directResize="1">
@@ -215,15 +215,16 @@
 	</element3>
 	<!--*******道床裂缝(补充模型)*******-->
 	<element4 name="7_dclf">
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>
 		<cut Cnt="2" overlap="100" combine_iTH="100"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域；combine_iTH同类框合并阈值(像素)-->
 		<trtInfo version="11" directResize="1">
-			<path path="guang3/G3_DCLF_1_20260922_best.engine"/>
+			<path path="guang3/G3_DCLF_3_20261009_best.engine"/>
 			<size w="1024" h="1024" depth="3"/>
 			<nodes>
 				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="道床裂缝" w="50" h="10" fp="50" mergeBox="1"/>
 				<name_1 padding="0" areaID="1200" partID="1401" flawID="01" name="电连接线" w="30" h="30" fp="100" mergeBox="0"/>
+				<name_2 padding="0" areaID="1200" partID="1401" flawID="01" name="结构缝" w="30" h="30" fp="100" mergeBox="0"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_0 GuiDao_XLBH_type="1024" DaoCha_XLBH_type="1024" XLBH_name="道床板裂纹"/>
