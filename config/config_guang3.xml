@@ -9,7 +9,7 @@
 	<debugFolder debugFolder=""/> 		   <!-- 保存调试结果的文件夹全路径:“”不保存 -->
 	<!--*******区域1*******-->
     <area0 name="0_region1"> 
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 	 	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
 		<trtInfo version="5" directResize="1">
@@ -198,11 +198,11 @@
 	</element2>
 	<!--*******道床翻浆冒泥(补充模型)*******-->
 	<element3 name="6_fjmn">
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>
 		<cut Cnt="0" overlap="0" sg_area="50"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域;sg_area水沟覆盖占比阈值(%)：翻浆冒泥框被水沟区域覆盖>=该值判为误报不报警-->
 		<trtInfo version="10" directResize="1">
-			<path path="guang3/G3_FJMN_2_20260920_best_EfficientNMS_TRT.engine"/>
+			<path path="guang3/G3_FJMN_2_20261016_best_nms.engine"/>
 			<size w="640" h="640" depth="3"/>
 			<nodes>
 				<name_0 padding="0" areaID="1200" partID="1200" flawID="31" name="道床翻浆冒泥" w="30" h="10" fp="60" mergeBox="1"/>
@@ -215,7 +215,7 @@
 	</element3>
 	<!--*******道床裂缝(补充模型)*******-->
 	<element4 name="7_dclf">
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>
 		<cut Cnt="2" overlap="100" combine_iTH="100"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域；combine_iTH同类框合并阈值(像素)-->
 		<trtInfo version="11" directResize="1">
