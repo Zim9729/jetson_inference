@@ -52,7 +52,7 @@
 		<cut Cnt="0" overlap="0"/>    	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 
 		<limitArea state="0" left="0" right="4096" top="20" bottom="4096"/>	 <!-- state:0不限制缺陷区域，1限制区域；--> 			
 		<trtInfo version="5" directResize="1">
-			<path path="guang3/GUANG3-DETAIL-1-best-20261017.engine"/>
+			<path path="guang3/G3-detail-best-20261017.engine"/>
 			<size w="640" h="640" depth="3"/>						
 			<nodes>			
 				<name_0 padding="0" areaID="1000" partID="1001" flawID="02" name="E型弹条正常" w="30" h="30" fp="100" mergeBox="1"/>
