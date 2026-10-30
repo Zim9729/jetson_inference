@@ -6,10 +6,11 @@
 	<saveResult2txt saveResult2txt="0"/>     <!-- 保存结果至0_flawProj2.txt:0不保存; 1保存-->
 	<saveResultImg saveResultImg="0"/>     <!-- 保存img结果:0不保存; 1保存roi图；2保存roi+大图; 3保存roi+显示置信度(调试用) -->
 	<saveResultJson saveResultJson="1" mode="defect" format="csv" defectImage="1" count_fastening="2"/>   <!-- 保存结果:0不保存; 1保存 mode: both image defect; format: json csv both; defectImage: 0不保存单缺陷图片 1保存; count_fastening: 扣件基准个数(默认2)-->
+	<combine_sameType types="2-3"/> 		   <!-- 同类型缺陷按XLBH_type合并:列入的编码一图一码只输出最高置信度一个(用-隔开);未列入的全部输出 -->
 	<debugFolder debugFolder=""/> 		   <!-- 保存调试结果的文件夹全路径:“”不保存 -->
 	<!--*******区域1*******-->
     <area0 name="0_region1"> 
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 	 	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 		  							
 		<trtInfo version="5" directResize="1">
@@ -47,7 +48,7 @@
 	</area1>
 	<!--*******区域1细节1*******-->
 	<detail0 name="2_detail1">
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>  											
 		<cut Cnt="0" overlap="0"/>    	<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 
 		<limitArea state="0" left="0" right="4096" top="20" bottom="4096"/>	 <!-- state:0不限制缺陷区域，1限制区域；--> 			
@@ -128,7 +129,7 @@
 	</element0>
 	<!--*******道床异物*******-->
 	<element1 name="5_dc_yiwu">
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>  				
 		<cut Cnt="0" overlap="0"/>		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 
 		<trtInfo version="5" directResize="1">
@@ -171,19 +172,19 @@
 	</element1>
 	<!--*******道床裂缝\道床积水*******-->
     <element2 name="2_dcqx"> 
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>  			
 		<cut Cnt="0" overlap="0"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域--> 	 			
 		<trtInfo version="10" directResize="1">
 			<path path="guang3/guang3-dcqx-best_EfficientNMS_TRT-20260806.engine"/>
 			<size w="1280" h="1280" depth="3"/>					
 			<nodes> 		
-				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="0道床裂缝" w="50" h="10" fp="40" mergeBox="1"/>
-				<name_1 padding="0" areaID="1200" partID="1200" flawID="31" name="1道床翻浆冒泥" w="10" h="10" fp="50" mergeBox="1"/>
-				<name_2 padding="0" areaID="1200" partID="1301" flawID="01" name="2扣件轨枕区域" w="30" h="30" fp="50" mergeBox="1"/>
+				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="0道床裂缝" w="50" h="10" fp="100" mergeBox="1"/>
+				<name_1 padding="0" areaID="1200" partID="1200" flawID="31" name="1道床翻浆冒泥" w="10" h="10" fp="100" mergeBox="1"/>
+				<name_2 padding="0" areaID="1200" partID="1301" flawID="01" name="2扣件轨枕区域" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_3 padding="0" areaID="1200" partID="1201" flawID="01" name="3道床区域" w="30" h="30" fp="100" mergeBox="1"/>
 				<name_4 padding="0" areaID="1200" partID="1401" flawID="01" name="4水沟区域" w="30" h="30" fp="50" mergeBox="1"/>
-				<name_5 padding="0" areaID="1200" partID="1200" flawID="22" name="5道床积水" w="30" h="30" fp="50" mergeBox="1"/>
+				<name_5 padding="0" areaID="1200" partID="1200" flawID="22" name="5道床积水" w="30" h="30" fp="100" mergeBox="1"/>
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_0 GuiDao_XLBH_type="1024" DaoCha_XLBH_type="1024" XLBH_name="道床板裂纹"/>
@@ -198,7 +199,7 @@
 	</element2>
 	<!--*******道床翻浆冒泥(补充模型)*******-->
 	<element3 name="6_fjmn">
-        <state state="1"/>
+        <state state="0"/>
 		<debug debug="0"/>
 		<cut Cnt="0" overlap="0" sg_area="90"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域;sg_area水沟覆盖占比阈值(%)：翻浆冒泥框被水沟区域覆盖>=该值判为误报不报警-->
 		<trtInfo version="11" directResize="1">
@@ -215,17 +216,18 @@
 	</element3>
 	<!--*******道床裂缝(补充模型)*******-->
 	<element4 name="7_dclf">
-        <state state="0"/>
+        <state state="1"/>
 		<debug debug="0"/>
-		<cut Cnt="2" overlap="100" combine_iTH="100" sg_area="90"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域；combine_iTH同类框合并阈值(像素)；sg_area水沟覆盖占比阈值(%)：裂缝框被水沟区域覆盖>=该值判为误报不报警-->
+		<cut Cnt="2" overlap="100" combine_iTH="100" sg_area="50"/> 		<!-- Cnt切图份数:0或1都为不切图；overlap重叠区域；combine_iTH同类框合并阈值(像素)；sg_area水沟覆盖占比阈值(%)：裂缝框被水沟区域覆盖>=该值判为误报不报警-->
 		<trtInfo version="11" directResize="1">
-			<path path="guang3/G3_DCLF_4_20261024_best.engine"/>
+			<path path="guang3/G3_DCLF_3_20261030_best.engine"/>
+			<!-- <path path="guang3/G3_DCLF_4_20261024_best.engine"/> -->
 			<size w="1024" h="1024" depth="3"/>
 			<nodes>
 				<name_0 padding="0" areaID="1200" partID="1200" flawID="20" name="道床裂缝" w="50" h="10" fp="50" mergeBox="1"/>
 				<name_1 padding="0" areaID="1200" partID="1401" flawID="01" name="电连接线" w="30" h="30" fp="100" mergeBox="0"/>
 				<name_2 padding="0" areaID="1200" partID="1401" flawID="01" name="结构缝" w="30" h="30" fp="100" mergeBox="0"/>
-				<name_3 padding="0" areaID="1200" partID="1401" flawID="01" name="水沟区域" w="30" h="30" fp="50" mergeBox="0"/>
+				<!--<name_3 padding="0" areaID="1200" partID="1401" flawID="01" name="水沟区域" w="30" h="30" fp="50" mergeBox="0"/>-->
 			</nodes>
 			<XLBHs> <!--编码XLBH  如不需要则编号为000-->
 				<xlbh_0 GuiDao_XLBH_type="1024" DaoCha_XLBH_type="1024" XLBH_name="道床板裂纹"/>

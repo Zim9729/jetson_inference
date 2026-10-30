@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "mylog.h"
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include "mycommon.h"
@@ -95,6 +96,16 @@ public:
         if (iconfig_count_fastening <= 0)
             iconfig_count_fastening = 2;
         combine_2koujian = pugi::xml_node(doc.child("root").child("combine_2koujian")).attribute("combine_2koujian").as_int();
+        {
+            std::string stypes = pugi::xml_node(doc.child("root").child("combine_sameType")).attribute("types").as_string("");
+            std::stringstream sst(stypes);
+            std::string sone;
+            while (std::getline(sst, sone, '-'))
+            {
+                if (!sone.empty())
+                    ini_param.combine_sameTypes.insert(sone);
+            }
+        }
         if (combine_2koujian == 1)
         {
             out_2koujian.combine_2koujian = combine_2koujian;

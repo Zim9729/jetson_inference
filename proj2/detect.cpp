@@ -1068,6 +1068,36 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         }
     }
 
+    //跨element过滤：element2的区域框也参与element4的水沟过滤
+    //与element4自身fjmn_sg同规则(取element4的sg_area)；element4自身区域框与element2的合并为一套掩码
+    if (element_objs[2] != nullptr && istate_elements[2] == 1 &&
+        element_objs[4] != nullptr && istate_elements[4] == 1 &&
+        (int)velement_flaws[4].size() > 0 &&
+        (int)element_objs[2]->m_vResultAreas.size() > 0)
+    {
+        std::vector<cv::Vec6f> vAreasAll(element_objs[4]->m_vResultAreas);
+        vAreasAll.insert(vAreasAll.end(),
+            element_objs[2]->m_vResultAreas.begin(), element_objs[2]->m_vResultAreas.end());
+        std::vector<std::pair<cv::Vec6f, nodeInfo>> vin;
+        vin.reserve(velement_flaws[4].size());
+        for (int i = 0; i < (int)velement_flaws[4].size(); i++)
+            vin.push_back(std::make_pair(velement_flaws[4][i].flawloc, velement_flaws[4][i].node));
+        std::vector<std::pair<cv::Vec6f, nodeInfo>> vout(vin);
+        element_objs[4]->fjmn_lf_js_process(img, vAreasAll, vout);
+        //fjmn_lf_js_process保序输出，按子序列映射回flawOutInfo
+        std::vector<flawOutInfo> vkept;
+        size_t o = 0;
+        for (size_t i = 0; i < vin.size() && o < vout.size(); i++)
+        {
+            if (vout[o].first == vin[i].first)
+            {
+                vkept.push_back(velement_flaws[4][i]);
+                o++;
+            }
+        }
+        velement_flaws[4] = std::move(vkept);
+    }
+
     vkoujian_flaws.reserve(vkoujian_flaws_detail0.size() + vkoujian_flaws_detail1.size());
     vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail0.begin(), vkoujian_flaws_detail0.end());
     vkoujian_flaws.insert(vkoujian_flaws.end(), vkoujian_flaws_detail1.begin(), vkoujian_flaws_detail1.end());
@@ -1109,32 +1139,29 @@ int Cdetect::detect_process(imgInfo param, std::vector<flawOutInfo>&vOutflaws)
         vOutflaws.push_back(vflaws[i]);
     }
 
-    //同类型缺陷强制合并：同一张图上每个XLBH_type只输出一个（保留最高置信度的框）
-    if ((int)vOutflaws.size() > 1)
+    //combine_sameType.types列入的XLBH_type：同一张图每个编码只输出一个（保留最高置信度的框）
+    //未列入的类型：多处独立缺陷全部输出；近距重复检出由上游combine(combine_iTH)空间合并兜底
+    if ((int)m_config_param.combine_sameTypes.size() > 0 && (int)vOutflaws.size() > 1)
     {
         std::unordered_map<std::string, flawOutInfo> type_merged;
+        std::vector<flawOutInfo> vmerged;
         for (int i = 0; i < (int)vOutflaws.size(); i++)
         {
             const std::string& stype = vOutflaws[i].XLBH_type;
-            const cv::Vec6f& loc = vOutflaws[i].flawloc;
+            if (m_config_param.combine_sameTypes.count(stype) == 0)
+            {
+                vmerged.push_back(vOutflaws[i]); //未列入合并名单的类型直接保留
+                continue;
+            }
             auto it = type_merged.find(stype);
-            if (it == type_merged.end())
+            if (it == type_merged.end() || vOutflaws[i].flawloc.val[4] > it->second.flawloc.val[4])
             {
                 type_merged[stype] = vOutflaws[i];
             }
-            else
-            {
-                flawOutInfo& merged = it->second;
-                //保留置信度最高的框，不取外接矩形
-                if (loc.val[4] > merged.flawloc.val[4])
-                {
-                    type_merged[stype] = vOutflaws[i];
-                }
-            }
         }
-        vOutflaws.clear();
         for (auto& kv : type_merged)
-            vOutflaws.push_back(kv.second);
+            vmerged.push_back(kv.second);
+        vOutflaws = std::move(vmerged);
     }
 
     //计算物理值

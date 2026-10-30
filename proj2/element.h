@@ -13,6 +13,8 @@ public:
                 std::vector<std::pair<cv::Vec6f,nodeInfo>>vInlocs,
                 std::vector<flawOutInfo>&voutflaws,
                 std::string* imgname=NULL);
+    void fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
+                            std::vector<std::pair<cv::Vec6f, nodeInfo>>& vOutlocs);
 private:
     bool batchsize_imgs(cv::Mat img,
                                   std::vector<std::pair<cv::Vec6f,nodeInfo>>vInlocs,
@@ -44,8 +46,6 @@ private:
                              vector<cv::Vec6f>vResultAreas,
                              float factorX,
                              float factorY);
-    void fjmn_lf_js_process(cv::Mat src, vector<cv::Vec6f>vAreas,
-                            std::vector<std::pair<cv::Vec6f, nodeInfo>>& vOutlocs);
 
 
 private:
